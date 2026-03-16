@@ -1,0 +1,15 @@
+{
+  "name": "cp-lockin",
+  "version": "1.0.0",
+  "description": "Firefox extension to track competitive programming progress on Codeforces and LeetCode.",
+  "scripts": {
+    "lint": "web-ext lint --source-dir .",
+    "run": "web-ext run --source-dir .",
+    "build": "web-ext build --source-dir . --artifacts-dir dist"
+  },
+  "devDependencies": {
+    "web-ext": "^8.0.0"
+  },
+  "keywords": ["firefox", "extension", "competitive-programming", "codeforces", "leetcode"],
+  "license": "MIT"
+}
