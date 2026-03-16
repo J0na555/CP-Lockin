@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CP-Lockin</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Header -->
+      <header class="header">
+        <div class="header-title">
+          <span class="logo">⚔</span>
+          <h1>CP-Lockin</h1>
+        </div>
+        <div class="header-actions">
+          <button id="btn-sync" class="icon-btn" title="Sync now">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 .49-4.5"></path>
+            </svg>
+          </button>
+          <button id="btn-settings" class="icon-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- No handle configured notice -->
+      <div id="notice-no-handle" class="notice notice--warn hidden">
+        No handles configured. Open <strong>Settings</strong> to add your Codeforces or LeetCode username.
+      </div>
+
+      <!-- Stats grid -->
+      <div id="stats-section" class="stats-grid">
+
+        <!-- Today -->
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value" id="today-count">—</div>
+          <div id="daily-goal-badge" class="badge badge--pending hidden">goal met</div>
+        </div>
+
+        <!-- Streak -->
+        <div class="stat-card">
+          <div class="stat-label">Streak</div>
+          <div class="stat-value" id="streak-count">—</div>
+          <div class="stat-sub">days</div>
+        </div>
+
+      </div>
+
+      <!-- Weekly progress -->
+      <section class="weekly-section">
+        <div class="weekly-header">
+          <span class="weekly-label">This week</span>
+          <span class="weekly-fraction">
+            <span id="weekly-solved">—</span> / <span id="weekly-goal">—</span>
+          </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="weekly-progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="weekly-percent" id="weekly-percent">0%</div>
+      </section>
+
+      <!-- Sync status -->
+      <footer class="footer">
+        <span id="sync-status" class="sync-status">Last synced: —</span>
+      </footer>
+
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

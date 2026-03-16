@@ -1,0 +1,251 @@
+/* ---- Reset & variables ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-bg: #0f1117;
+  --color-surface: #1a1d27;
+  --color-surface-2: #23273a;
+  --color-border: #2e3250;
+  --color-accent: #5865f2;
+  --color-accent-hover: #4752c4;
+  --color-success: #3ba55d;
+  --color-warn: #faa61a;
+  --color-danger: #ed4245;
+  --color-text: #e0e2f0;
+  --color-text-muted: #7b82a8;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 14px;
+  min-width: 340px;
+  max-width: 400px;
+}
+
+/* ---- Container ---- */
+.container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Header ---- */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+  font-size: 20px;
+}
+
+.header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ---- Icon buttons ---- */
+.icon-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.icon-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.icon-btn.spinning svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Notice ---- */
+.notice {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.notice--warn {
+  background: rgba(250, 166, 26, 0.12);
+  border: 1px solid rgba(250, 166, 26, 0.35);
+  color: var(--color-warn);
+}
+
+.notice--error {
+  background: rgba(237, 66, 69, 0.12);
+  border: 1px solid rgba(237, 66, 69, 0.35);
+  color: var(--color-danger);
+}
+
+/* ---- Stats grid ---- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Badges ---- */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge--success {
+  background: rgba(59, 165, 93, 0.2);
+  color: var(--color-success);
+  border: 1px solid rgba(59, 165, 93, 0.4);
+}
+
+.badge--pending {
+  background: rgba(250, 166, 26, 0.15);
+  color: var(--color-warn);
+  border: 1px solid rgba(250, 166, 26, 0.35);
+}
+
+/* ---- Weekly section ---- */
+.weekly-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weekly-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.weekly-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+.weekly-fraction {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.progress-track {
+  background: var(--color-surface-2);
+  border-radius: 20px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent), #a855f7);
+  border-radius: 20px;
+  transition: width 0.5s ease;
+  min-width: 0%;
+}
+
+.progress-bar.complete {
+  background: linear-gradient(90deg, var(--color-success), #22c55e);
+}
+
+.weekly-percent {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+/* ---- Footer ---- */
+.footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sync-status {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ---- Utility ---- */
+.hidden {
+  display: none !important;
+}

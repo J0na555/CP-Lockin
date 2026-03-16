@@ -1,0 +1,177 @@
+/* ---- Reset & variables (shared palette with popup) ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-bg: #0f1117;
+  --color-surface: #1a1d27;
+  --color-surface-2: #23273a;
+  --color-border: #2e3250;
+  --color-accent: #5865f2;
+  --color-accent-hover: #4752c4;
+  --color-success: #3ba55d;
+  --color-text: #e0e2f0;
+  --color-text-muted: #7b82a8;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 24px;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ---- Header ---- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.logo {
+  font-size: 24px;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/* ---- Sections ---- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ---- Fields ---- */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.field-unit {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.field-input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.field-input:focus {
+  border-color: var(--color-accent);
+}
+
+.field-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.field-input--short {
+  width: 120px;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* ---- Form footer ---- */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.save-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.save-status--success {
+  color: var(--color-success);
+}
+
+.save-status--error {
+  color: #ed4245;
+}
+
+/* ---- Save button ---- */
+.btn-save {
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 20px;
+  transition: background 0.15s;
+}
+
+.btn-save:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Utility ---- */
+.hidden {
+  display: none !important;
+}
