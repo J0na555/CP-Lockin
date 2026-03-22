@@ -234,6 +234,12 @@ body {
   text-align: right;
 }
 
+.weekly-breakdown {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
 /* ---- Footer ---- */
 .footer {
   display: flex;

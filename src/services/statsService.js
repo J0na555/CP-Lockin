@@ -4,63 +4,95 @@
  */
 
 /**
- * Count the number of problems solved on a specific date.
+ * Returns per-platform and total counts for a date.
  * @param {string} dateKey  "YYYY-MM-DD"
- * @param {Object.<string, Array>} submissionsByDate
- * @returns {number}
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
+ * @returns {{ codeforces: number, leetcode: number, total: number }}
  */
-function getDailyCount(dateKey, submissionsByDate) {
-  return (submissionsByDate[dateKey] ?? []).length;
+function getDailyCounts(dateKey, submissionsByDate) {
+  const dateBucket = submissionsByDate[dateKey] ?? {};
+  const codeforces = (dateBucket[PLATFORMS.CODEFORCES] ?? []).length;
+  const leetcode = (dateBucket[PLATFORMS.LEETCODE] ?? []).length;
+  return {
+    codeforces,
+    leetcode,
+    total: codeforces + leetcode,
+  };
 }
 
 /**
  * Sum all problems solved in the current calendar week (Mon–Sun).
- * @param {Object.<string, Array>} submissionsByDate
- * @returns {number}
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
+ * @returns {{ codeforces: number, leetcode: number, total: number }}
  */
 function getWeeklySolvedCount(submissionsByDate) {
   const today = getTodayKey();
   const weekStart = getStartOfWeekKey();
   const days = getDaysInRange(weekStart, today);
-  return days.reduce((sum, d) => sum + getDailyCount(d, submissionsByDate), 0);
+  return days.reduce(
+    (sum, d) => {
+      const counts = getDailyCounts(d, submissionsByDate);
+      return {
+        codeforces: sum.codeforces + counts.codeforces,
+        leetcode: sum.leetcode + counts.leetcode,
+        total: sum.total + counts.total,
+      };
+    },
+    { codeforces: 0, leetcode: 0, total: 0 }
+  );
 }
 
 /**
  * Returns structured weekly progress.
- * @param {Object.<string, Array>} submissionsByDate
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
  * @param {number} weeklyGoal
- * @returns {{ solved: number, goal: number, percentage: number }}
+ * @returns {{ solved: number, goal: number, percentage: number, byPlatform: { codeforces: number, leetcode: number } }}
  */
 function getWeeklyProgress(submissionsByDate, weeklyGoal) {
-  const solved = getWeeklySolvedCount(submissionsByDate);
+  const weeklyCounts = getWeeklySolvedCount(submissionsByDate);
+  const solved = weeklyCounts.total;
   const percentage = weeklyGoal > 0 ? Math.min(100, Math.round((solved / weeklyGoal) * 100)) : 0;
-  return { solved, goal: weeklyGoal, percentage };
+  return {
+    solved,
+    goal: weeklyGoal,
+    percentage,
+    byPlatform: {
+      codeforces: weeklyCounts.codeforces,
+      leetcode: weeklyCounts.leetcode,
+    },
+  };
 }
 
 /**
  * Returns whether the daily minimum goal has been met today.
- * @param {Object.<string, Array>} submissionsByDate
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
  * @param {number} dailyMinGoal
  * @returns {boolean}
  */
 function isDailyGoalMet(submissionsByDate, dailyMinGoal) {
-  return getDailyCount(getTodayKey(), submissionsByDate) >= dailyMinGoal;
+  return getDailyCounts(getTodayKey(), submissionsByDate).total >= dailyMinGoal;
 }
 
 /**
  * Aggregated stats object used by the popup.
- * @param {Object.<string, Array>} submissionsByDate
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
  * @param {{ weeklyGoal: number, dailyMinGoal: number }} settings
  * @returns {{
  *   todayCount: number,
+ *   todayByPlatform: { codeforces: number, leetcode: number },
  *   weeklyProgress: { solved: number, goal: number, percentage: number },
  *   dailyGoalMet: boolean,
  * }}
  */
 function computeStats(submissionsByDate, settings) {
   const { weeklyGoal, dailyMinGoal } = settings;
+  const todayCounts = getDailyCounts(getTodayKey(), submissionsByDate);
   return {
-    todayCount: getDailyCount(getTodayKey(), submissionsByDate),
+    todayCount: todayCounts.total,
+    todayByPlatform: {
+      codeforces: todayCounts.codeforces,
+      leetcode: todayCounts.leetcode,
+    },
     weeklyProgress: getWeeklyProgress(submissionsByDate, weeklyGoal),
     dailyGoalMet: isDailyGoalMet(submissionsByDate, dailyMinGoal),
   };

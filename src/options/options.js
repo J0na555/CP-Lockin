@@ -7,6 +7,7 @@ const elCfHandle = document.getElementById("cf-handle");
 const elLcHandle = document.getElementById("lc-handle");
 const elWeeklyGoal = document.getElementById("weekly-goal");
 const elDailyGoal = document.getElementById("daily-goal");
+const elRequireBothSitesForStreak = document.getElementById("require-both-sites-streak");
 const elSaveStatus = document.getElementById("save-status");
 
 // ---------------------------------------------------------------------------
@@ -20,12 +21,14 @@ async function loadSettings() {
     leetcodeHandle: DEFAULTS.leetcodeHandle,
     weeklyGoal: DEFAULTS.weeklyGoal,
     dailyMinGoal: DEFAULTS.dailyMinGoal,
+    requireBothSitesForStreak: DEFAULTS.requireBothSitesForStreak,
   };
 
   elCfHandle.value = settings.codeforcesHandle ?? "";
   elLcHandle.value = settings.leetcodeHandle ?? "";
   elWeeklyGoal.value = settings.weeklyGoal ?? DEFAULTS.weeklyGoal;
   elDailyGoal.value = settings.dailyMinGoal ?? DEFAULTS.dailyMinGoal;
+  elRequireBothSitesForStreak.checked = settings.requireBothSitesForStreak ?? DEFAULTS.requireBothSitesForStreak;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,6 +56,7 @@ async function saveSettings(e) {
     leetcodeHandle: elLcHandle.value.trim(),
     weeklyGoal,
     dailyMinGoal,
+    requireBothSitesForStreak: elRequireBothSitesForStreak.checked,
   };
 
   try {

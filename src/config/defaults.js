@@ -1,6 +1,7 @@
 const DEFAULTS = {
   weeklyGoal: 25,
   dailyMinGoal: 1,
+  requireBothSitesForStreak: false,
   syncIntervalMinutes: 30,
   codeforcesHandle: "",
   leetcodeHandle: "",

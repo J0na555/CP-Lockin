@@ -65,7 +65,7 @@ async function runSync() {
       continue;
     }
 
-    await bulkMergeSubmissions(submissionsByDate);
+    await bulkMergeSubmissions(id, submissionsByDate);
     await setLastSync(id, Date.now());
   }
 
@@ -108,7 +108,7 @@ async function buildStatsResponse() {
   ]);
 
   const stats = computeStats(submissionsByDate, settings);
-  const streak = calculateStreak(submissionsByDate, settings.dailyMinGoal);
+  const streak = calculateStreak(submissionsByDate, settings);
 
   const lastSync = {
     [PLATFORMS.CODEFORCES]: await getLastSync(PLATFORMS.CODEFORCES),

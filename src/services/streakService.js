@@ -15,27 +15,41 @@
  * "Longest" streak:
  *   - Scan all stored dates in ascending order.
  *
- * @param {Object.<string, Array>} submissionsByDate
- * @param {number} [dailyMinGoal=1]
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
+ * @param {{dailyMinGoal?:number, requireBothSitesForStreak?:boolean}} [settings]
  * @returns {{ current: number, longest: number }}
  */
-function calculateStreak(submissionsByDate, dailyMinGoal = 1) {
+function calculateStreak(submissionsByDate, settings = {}) {
+  const dailyMinGoal = settings.dailyMinGoal ?? 1;
+  const requireBothSitesForStreak = Boolean(settings.requireBothSitesForStreak);
   const today = getTodayKey();
+
+  function countsForDate(dateKey) {
+    const bucket = submissionsByDate[dateKey] ?? {};
+    const codeforces = (bucket[PLATFORMS.CODEFORCES] ?? []).length;
+    const leetcode = (bucket[PLATFORMS.LEETCODE] ?? []).length;
+    return { codeforces, leetcode, total: codeforces + leetcode };
+  }
+
+  function qualifiesForStreak(dateKey) {
+    const counts = countsForDate(dateKey);
+    if (counts.total < dailyMinGoal) return false;
+    if (!requireBothSitesForStreak) return true;
+    return counts.codeforces > 0 && counts.leetcode > 0;
+  }
 
   // ---- current streak ----
   let current = 0;
   let checkDate = new Date();
 
   // If no solves today, check from yesterday (streak still valid)
-  const todayCount = (submissionsByDate[today] ?? []).length;
-  if (todayCount < dailyMinGoal) {
+  if (!qualifiesForStreak(today)) {
     checkDate.setDate(checkDate.getDate() - 1);
   }
 
   while (true) {
     const key = formatDateKey(checkDate);
-    const count = (submissionsByDate[key] ?? []).length;
-    if (count < dailyMinGoal) break;
+    if (!qualifiesForStreak(key)) break;
     current++;
     checkDate.setDate(checkDate.getDate() - 1);
   }
@@ -47,8 +61,7 @@ function calculateStreak(submissionsByDate, dailyMinGoal = 1) {
   let prevDate = null;
 
   for (const key of sortedKeys) {
-    const count = (submissionsByDate[key] ?? []).length;
-    if (count < dailyMinGoal) {
+    if (!qualifiesForStreak(key)) {
       run = 0;
       prevDate = null;
       continue;

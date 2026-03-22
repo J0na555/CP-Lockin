@@ -126,6 +126,18 @@ h1 {
   line-height: 1.5;
 }
 
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.checkbox-field input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
 /* ---- Form footer ---- */
 .form-footer {
   display: flex;

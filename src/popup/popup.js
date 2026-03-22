@@ -8,11 +8,13 @@
 // ---------------------------------------------------------------------------
 
 const elTodayCount = document.getElementById("today-count");
+const elTodayBreakdown = document.getElementById("today-breakdown");
 const elStreakCount = document.getElementById("streak-count");
 const elWeeklySolved = document.getElementById("weekly-solved");
 const elWeeklyGoal = document.getElementById("weekly-goal");
 const elWeeklyBar = document.getElementById("weekly-progress-bar");
 const elWeeklyPercent = document.getElementById("weekly-percent");
+const elWeeklyBreakdown = document.getElementById("weekly-breakdown");
 const elDailyBadge = document.getElementById("daily-goal-badge");
 const elSyncStatus = document.getElementById("sync-status");
 const elNoticeNoHandle = document.getElementById("notice-no-handle");
@@ -28,6 +30,7 @@ function renderStats(payload) {
 
   // Today
   elTodayCount.textContent = stats.todayCount;
+  elTodayBreakdown.textContent = `CF ${stats.todayByPlatform.codeforces} | LC ${stats.todayByPlatform.leetcode}`;
 
   // Daily goal badge
   elDailyBadge.classList.remove("hidden", "badge--success", "badge--pending");
@@ -48,6 +51,7 @@ function renderStats(payload) {
   elWeeklyGoal.textContent = goal;
   elWeeklyBar.style.width = `${percentage}%`;
   elWeeklyPercent.textContent = `${percentage}%`;
+  elWeeklyBreakdown.textContent = `CF ${stats.weeklyProgress.byPlatform.codeforces} | LC ${stats.weeklyProgress.byPlatform.leetcode}`;
   if (percentage >= 100) {
     elWeeklyBar.classList.add("complete");
   } else {
