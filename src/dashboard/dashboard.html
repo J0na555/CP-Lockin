@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CP-Lockin — Activity</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <div class="page">
+
+      <!-- Header -->
+      <header class="page-header">
+        <span class="logo">⚔</span>
+        <h1>CP-Lockin <span class="subtitle">Activity</span></h1>
+      </header>
+
+      <!-- Summary stat cards -->
+      <section class="summary-section">
+        <div class="summary-card">
+          <div class="summary-label">Active days</div>
+          <div class="summary-value" id="stat-active-days">—</div>
+          <div class="summary-sub">last 52 weeks</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Both platforms</div>
+          <div class="summary-value" id="stat-both-days">—</div>
+          <div class="summary-sub">days with CF + LC</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Total solved</div>
+          <div class="summary-value" id="stat-total-solved">—</div>
+          <div class="summary-sub">problems</div>
+        </div>
+      </section>
+
+      <!-- Heatmap -->
+      <section class="heatmap-section">
+        <h2 class="section-title">Last 52 weeks</h2>
+
+        <div class="heatmap-container">
+          <!-- Day-of-week labels -->
+          <div id="day-labels"></div>
+
+          <!-- Month labels + grid -->
+          <div class="heatmap-right">
+            <div id="heatmap-months"></div>
+            <div id="heatmap-grid"></div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="heatmap-legend">
+
+          <!-- Activity intensity scale -->
+          <div class="legend-scale">
+            <span class="legend-scale-label">Less</span>
+            <div class="legend-swatch scale-0"></div>
+            <div class="legend-swatch scale-1"></div>
+            <div class="legend-swatch scale-2"></div>
+            <div class="legend-swatch scale-3"></div>
+            <span class="legend-scale-label">More</span>
+          </div>
+
+          <div class="legend-divider"></div>
+
+          <!-- Platform color key -->
+          <div class="legend-color-items">
+            <div class="legend-color-item">
+              <div class="legend-swatch empty"></div>
+              <span>No activity</span>
+            </div>
+            <div class="legend-color-item">
+              <div class="legend-swatch leetcode"></div>
+              <span>LeetCode only</span>
+            </div>
+            <div class="legend-color-item">
+              <div class="legend-swatch codeforces"></div>
+              <span>Codeforces only</span>
+            </div>
+            <div class="legend-color-item">
+              <div class="legend-swatch both"></div>
+              <span>Both platforms</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Floating tooltip (populated by JS on cell hover) -->
+    <div class="tooltip" id="tooltip" hidden></div>
+
+    <script src="../config/defaults.js"></script>
+    <script src="utils/dateUtils.js"></script>
+    <script src="services/trackerService.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>

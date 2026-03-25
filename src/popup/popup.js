@@ -18,8 +18,9 @@ const elWeeklyBreakdown = document.getElementById("weekly-breakdown");
 const elDailyBadge = document.getElementById("daily-goal-badge");
 const elSyncStatus = document.getElementById("sync-status");
 const elNoticeNoHandle = document.getElementById("notice-no-handle");
-const btnSync = document.getElementById("btn-sync");
-const btnSettings = document.getElementById("btn-settings");
+const btnSync      = document.getElementById("btn-sync");
+const btnSettings  = document.getElementById("btn-settings");
+const btnDashboard = document.getElementById("btn-dashboard");
 
 // ---------------------------------------------------------------------------
 // Render helpers
@@ -150,6 +151,10 @@ btnSync.addEventListener("click", triggerSync);
 
 btnSettings.addEventListener("click", () => {
   browser.runtime.openOptionsPage();
+});
+
+btnDashboard.addEventListener("click", () => {
+  browser.tabs.create({ url: browser.runtime.getURL("src/dashboard/dashboard.html") });
 });
 
 // ---------------------------------------------------------------------------
