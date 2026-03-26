@@ -11,6 +11,16 @@ function formatDateKey(date = new Date()) {
 }
 
 /**
+ * Parses "YYYY-MM-DD" as a local calendar date (avoids UTC shifts from ISO strings).
+ * @param {string} key
+ * @returns {Date}
+ */
+function parseDateKey(key) {
+  const [y, m, d] = key.split("-");
+  return new Date(y, m - 1, d);
+}
+
+/**
  * Returns today's date key in "YYYY-MM-DD".
  * @returns {string}
  */
@@ -49,8 +59,8 @@ function getStartOfWeekKey(date = new Date()) {
  */
 function getDaysInRange(startKey, endKey) {
   const dates = [];
-  const current = new Date(startKey + "T00:00:00");
-  const end = new Date(endKey + "T00:00:00");
+  const current = parseDateKey(startKey);
+  const end = parseDateKey(endKey);
   while (current <= end) {
     dates.push(formatDateKey(current));
     current.setDate(current.getDate() + 1);

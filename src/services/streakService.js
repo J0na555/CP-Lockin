@@ -70,8 +70,8 @@ function calculateStreak(submissionsByDate, settings = {}) {
     if (prevDate === null) {
       run = 1;
     } else {
-      const prev = new Date(prevDate + "T00:00:00");
-      const curr = new Date(key + "T00:00:00");
+      const prev = parseDateKey(prevDate);
+      const curr = parseDateKey(key);
       const diffDays = Math.round((curr - prev) / 86400000);
       run = diffDays === 1 ? run + 1 : 1;
     }

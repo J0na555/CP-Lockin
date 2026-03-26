@@ -86,7 +86,7 @@ function renderMonthLabels(heatmapRange) {
 
   let lastMonth = -1;
   for (const dateKey of dates) {
-    const month = new Date(dateKey + "T00:00:00").getMonth();
+    const month = parseDateKey(dateKey).getMonth();
     if (month !== lastMonth) {
       const weekIdx = getWeekIndex(dateKey, startKey);
       const span = document.createElement("span");

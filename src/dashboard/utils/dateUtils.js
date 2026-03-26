@@ -11,13 +11,23 @@ function formatDateKey(date) {
 }
 
 /**
+ * Parses "YYYY-MM-DD" as a local calendar date (avoids UTC shifts from ISO strings).
+ * @param {string} key
+ * @returns {Date}
+ */
+function parseDateKey(key) {
+  const [y, m, d] = key.split("-");
+  return new Date(y, m - 1, d);
+}
+
+/**
  * Returns the day-of-week index for grid row placement.
  * Monday = 0, Tuesday = 1, …, Sunday = 6
  * @param {string} dateKey "YYYY-MM-DD"
  * @returns {number}
  */
 function getDayOfWeek(dateKey) {
-  const d = new Date(dateKey + "T00:00:00");
+  const d = parseDateKey(dateKey);
   return (d.getDay() + 6) % 7;
 }
 
@@ -28,16 +38,13 @@ function getDayOfWeek(dateKey) {
  * @returns {number}
  */
 function getWeekIndex(dateKey, startKey) {
-  const date = new Date(dateKey + "T00:00:00");
-  const start = new Date(startKey + "T00:00:00");
-  const diffDays = Math.round((date - start) / 86400000);
+  const date = parseDateKey(dateKey);
+  const start = parseDateKey(startKey);
+  const diffDays = Math.floor((date - start) / 86400000);
   return Math.floor(diffDays / 7);
 }
 
 /**
- * Generates the full date range for the heatmap.
- * Starts on the Monday of the week that was `weeks` full weeks before today's week,
- * and ends on today. This always produces complete week-aligned columns.
  *
  * @param {number} [weeks=52]
  * @returns {{ startKey: string, endKey: string, dates: string[] }}
@@ -57,6 +64,7 @@ function getHeatmapRange(weeks = 52) {
 
   const dates = [];
   const cursor = new Date(startDate);
+  
   while (cursor <= today) {
     dates.push(formatDateKey(cursor));
     cursor.setDate(cursor.getDate() + 1);
