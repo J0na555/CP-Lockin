@@ -68,3 +68,23 @@ function getHeatmapRange(weeks = 52) {
     dates,
   };
 }
+
+/**
+ * Calendar week containing `date` (local time): Monday–Sunday as "YYYY-MM-DD" keys.
+ * @param {Date} [date=new Date()]
+ * @returns {string[]}
+ */
+function getCalendarWeekDateKeys(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const dow = (d.getDay() + 6) % 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - dow);
+  const keys = [];
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+    keys.push(formatDateKey(day));
+  }
+  return keys;
+}

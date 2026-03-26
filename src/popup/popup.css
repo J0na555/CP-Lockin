@@ -6,17 +6,19 @@
 }
 
 :root {
-  --color-bg: #0f1117;
-  --color-surface: #1a1d27;
-  --color-surface-2: #23273a;
-  --color-border: #2e3250;
-  --color-accent: #5865f2;
-  --color-accent-hover: #4752c4;
-  --color-success: #3ba55d;
-  --color-warn: #faa61a;
-  --color-danger: #ed4245;
-  --color-text: #e0e2f0;
-  --color-text-muted: #7b82a8;
+  /* Dark mode — sleek / easy on eyes */
+  --color-bg: #1a1a2e;
+  --color-surface: #16213e;
+  --color-surface-2: #0f1729;
+  --color-border: #2d2d44;
+  --color-accent: #4a90e2;
+  --color-accent-hover: #3a7fd4;
+  --color-accent-soft: #6ba8f0;
+  --color-success: #4ecdc4;
+  --color-warn: #f0b429;
+  --color-danger: #e85d75;
+  --color-text: #ffffff;
+  --color-text-muted: #a9a9a9;
   --radius: 10px;
   --radius-sm: 6px;
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -105,14 +107,14 @@ body {
 }
 
 .notice--warn {
-  background: rgba(250, 166, 26, 0.12);
-  border: 1px solid rgba(250, 166, 26, 0.35);
+  background: rgba(240, 180, 41, 0.12);
+  border: 1px solid rgba(240, 180, 41, 0.35);
   color: var(--color-warn);
 }
 
 .notice--error {
-  background: rgba(237, 66, 69, 0.12);
-  border: 1px solid rgba(237, 66, 69, 0.35);
+  background: rgba(232, 93, 117, 0.12);
+  border: 1px solid rgba(232, 93, 117, 0.35);
   color: var(--color-danger);
 }
 
@@ -167,15 +169,15 @@ body {
 }
 
 .badge--success {
-  background: rgba(59, 165, 93, 0.2);
+  background: rgba(78, 205, 196, 0.18);
   color: var(--color-success);
-  border: 1px solid rgba(59, 165, 93, 0.4);
+  border: 1px solid rgba(78, 205, 196, 0.4);
 }
 
 .badge--pending {
-  background: rgba(250, 166, 26, 0.15);
+  background: rgba(240, 180, 41, 0.12);
   color: var(--color-warn);
-  border: 1px solid rgba(250, 166, 26, 0.35);
+  border: 1px solid rgba(240, 180, 41, 0.32);
 }
 
 /* ---- Weekly section ---- */
@@ -218,14 +220,14 @@ body {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-accent), #a855f7);
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-soft));
   border-radius: 20px;
   transition: width 0.5s ease;
   min-width: 0%;
 }
 
 .progress-bar.complete {
-  background: linear-gradient(90deg, var(--color-success), #22c55e);
+  background: linear-gradient(90deg, var(--color-success), #7ee8dc);
 }
 
 .weekly-percent {

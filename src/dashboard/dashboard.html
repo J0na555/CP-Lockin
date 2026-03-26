@@ -23,14 +23,26 @@
           <div class="summary-sub">last 52 weeks</div>
         </div>
         <div class="summary-card">
-          <div class="summary-label">Both platforms</div>
+          <div class="summary-label">Streak days</div>
           <div class="summary-value" id="stat-both-days">—</div>
           <div class="summary-sub">days with CF + LC</div>
         </div>
-        <div class="summary-card">
-          <div class="summary-label">Total solved</div>
-          <div class="summary-value" id="stat-total-solved">—</div>
-          <div class="summary-sub">problems</div>
+        <div class="summary-card summary-card-breakdown">
+          <div class="summary-label">Solved</div>
+          <ul class="summary-breakdown" aria-label="Problems solved breakdown">
+            <li>
+              <span class="summary-breakdown-label">Weekly LeetCode <span class="summary-breakdown-hint"></span></span>
+              <span class="summary-breakdown-value" id="stat-week-lc">—</span>
+            </li>
+            <li>
+              <span class="summary-breakdown-label">Weekly Codeforces <span class="summary-breakdown-hint"></span></span>
+              <span class="summary-breakdown-value" id="stat-week-cf">—</span>
+            </li>
+            <li class="summary-breakdown-overall">
+              <span class="summary-breakdown-label">Overall solved <span class="summary-breakdown-hint"></span></span>
+              <span class="summary-breakdown-value" id="stat-total-all">—</span>
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -38,7 +50,7 @@
       <section class="heatmap-section">
         <h2 class="section-title">Last 52 weeks</h2>
 
-        <div class="heatmap-container">
+        <div class="heatmap-container">a
           <!-- Day-of-week labels -->
           <div id="day-labels"></div>
 
