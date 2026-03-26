@@ -24,8 +24,9 @@ async function fetchSubmissions(platform, handle) {
       break;
 
     case PLATFORMS.LEETCODE:
-      result = await getLeetCodeSubmissions(handle);
-      break;
+      // LeetCode is synced via the submissionCalendar path directly in
+      // service-worker.js (runSync). fetchSubmissions() is not used for it.
+      return { submissionsByDate: {}, error: null };
 
     default:
       return { submissionsByDate: {}, error: `Unknown platform: ${platform}` };

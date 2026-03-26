@@ -44,29 +44,41 @@ browser.alarms.onAlarm.addListener((alarm) => {
 
 /**
  * Fetches new submissions from all configured platforms and stores them.
+ *
+ * LeetCode uses the submissionCalendar path (full year, count-only).
+ * Codeforces uses the legacy individual-submission path.
+ *
  * @returns {Promise<{ ok: boolean, errors: string[] }>}
  */
 async function runSync() {
   const settings = await getSettings();
   const errors = [];
 
-  const platforms = [
-    { id: PLATFORMS.CODEFORCES, handle: settings.codeforcesHandle },
-    { id: PLATFORMS.LEETCODE, handle: settings.leetcodeHandle },
-  ];
-
-  for (const { id, handle } of platforms) {
-    if (!handle) continue;
-
-    const { submissionsByDate, error } = await fetchSubmissions(id, handle);
-
+  // --- LeetCode: calendar-based sync ---
+  if (settings.leetcodeHandle) {
+    const { calendar, error } = await getLeetCodeSubmissionCalendar(
+      settings.leetcodeHandle
+    );
     if (error) {
-      errors.push(`${id}: ${error}`);
-      continue;
+      errors.push(`${PLATFORMS.LEETCODE}: ${error}`);
+    } else if (calendar) {
+      await setLeetCodeCalendar(calendarToDateCounts(calendar));
+      await setLastSync(PLATFORMS.LEETCODE, Date.now());
     }
+  }
 
-    await bulkMergeSubmissions(id, submissionsByDate);
-    await setLastSync(id, Date.now());
+  // --- Codeforces: individual submission path (unchanged) ---
+  if (settings.codeforcesHandle) {
+    const { submissionsByDate, error } = await fetchSubmissions(
+      PLATFORMS.CODEFORCES,
+      settings.codeforcesHandle
+    );
+    if (error) {
+      errors.push(`${PLATFORMS.CODEFORCES}: ${error}`);
+    } else {
+      await bulkMergeSubmissions(PLATFORMS.CODEFORCES, submissionsByDate);
+      await setLastSync(PLATFORMS.CODEFORCES, Date.now());
+    }
   }
 
   return { ok: errors.length === 0, errors };
@@ -99,16 +111,60 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // ---------------------------------------------------------------------------
 
 /**
+ * Produces an in-memory view of submissionsByDate where the LeetCode arrays
+ * are sized according to calendar counts rather than stored objects.
+ *
+ * This lets computeStats() and calculateStreak() (which count .length on
+ * platform arrays) work correctly without any changes to those modules.
+ * The merge is ephemeral — nothing is written to storage.
+ *
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
+ * @param {Object.<string, number>} lcCalendar  { [dateKey]: count }
+ * @returns {Object.<string, Object.<string, Array>>}
+ */
+function mergeCalendarIntoSubmissions(submissionsByDate, lcCalendar) {
+  if (!lcCalendar || Object.keys(lcCalendar).length === 0) {
+    return submissionsByDate;
+  }
+
+  const merged = {};
+
+  for (const [dateKey, bucket] of Object.entries(submissionsByDate)) {
+    merged[dateKey] = { ...bucket };
+  }
+
+  for (const [dateKey, count] of Object.entries(lcCalendar)) {
+    if (!merged[dateKey]) {
+      merged[dateKey] = { [PLATFORMS.CODEFORCES]: [], [PLATFORMS.LEETCODE]: [] };
+    }
+    // Synthetic placeholder array sized to the calendar count. Only .length
+    // is ever read by the stats/streak services — contents are irrelevant.
+    merged[dateKey] = {
+      ...merged[dateKey],
+      [PLATFORMS.LEETCODE]: Array.from({ length: count }),
+    };
+  }
+
+  return merged;
+}
+
+/**
  * Reads storage and computes the full stats payload for the popup.
  */
 async function buildStatsResponse() {
-  const [submissionsByDate, settings] = await Promise.all([
+  const [submissionsByDate, settings, lcCalendar] = await Promise.all([
     getAllSubmissions(),
     getSettings(),
+    getLeetCodeCalendar(),
   ]);
 
-  const stats = computeStats(submissionsByDate, settings);
-  const streak = calculateStreak(submissionsByDate, settings);
+  const mergedSubmissions = mergeCalendarIntoSubmissions(
+    submissionsByDate,
+    lcCalendar
+  );
+
+  const stats = computeStats(mergedSubmissions, settings);
+  const streak = calculateStreak(mergedSubmissions, settings);
 
   const lastSync = {
     [PLATFORMS.CODEFORCES]: await getLastSync(PLATFORMS.CODEFORCES),

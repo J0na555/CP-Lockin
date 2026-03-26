@@ -16,6 +16,9 @@ const STORAGE_KEYS = {
   SETTINGS: "settings",
   SUBMISSIONS: "submissions",
   LAST_SYNC: "lastSync",
+  // Per-day LeetCode submission counts sourced from submissionCalendar.
+  // Shape: { [dateKey: "YYYY-MM-DD"]: number }
+  LEETCODE_CALENDAR: "leetcodeCalendar",
 };
 
 const SYNC_ALARM_NAME = "cp-lockin-sync";

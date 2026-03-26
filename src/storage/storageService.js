@@ -174,6 +174,29 @@ async function setLastSync(platform, timestampMs) {
 }
 
 // ---------------------------------------------------------------------------
+// LeetCode submission calendar
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the stored LeetCode calendar date-count map.
+ * @returns {Promise<Object.<string, number>>}  { [dateKey: "YYYY-MM-DD"]: count }
+ */
+async function getLeetCodeCalendar() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR);
+  return result[STORAGE_KEYS.LEETCODE_CALENDAR] ?? {};
+}
+
+/**
+ * Persists the LeetCode calendar date-count map (full replace).
+ * @param {Object.<string, number>} calendarByDate  { [dateKey: "YYYY-MM-DD"]: count }
+ */
+async function setLeetCodeCalendar(calendarByDate) {
+  await browser.storage.local.set({
+    [STORAGE_KEYS.LEETCODE_CALENDAR]: calendarByDate,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Initialise defaults on first install
 // ---------------------------------------------------------------------------
 
@@ -190,6 +213,7 @@ async function initDefaults() {
       },
       [STORAGE_KEYS.SUBMISSIONS]: {},
       [STORAGE_KEYS.LAST_SYNC]: {},
+      [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
     });
   }
 }

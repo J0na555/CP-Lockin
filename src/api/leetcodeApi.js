@@ -1,46 +1,43 @@
 /**
  * LeetCode API client using the public GraphQL endpoint.
  *
- * The public `recentAcSubmissionList` query returns up to 20 recent AC
- * submissions without authentication. For full history the user can supply
- * their LEETCODE_SESSION cookie via the Options page; the cookie is forwarded
- * automatically by the browser because the extension has host_permissions for
- * leetcode.com.
+ * Uses the `submissionCalendar` field instead of `recentAcSubmissionList`.
+ * The calendar covers roughly one year of activity without the 20-submission
+ * cap, making weekly/heatmap tracking accurate.
  *
- * Normalized submission shape:
- * {
- *   platform: "leetcode",
- *   problemId: string,     // slug, e.g. "two-sum"
- *   problemName: string,
- *   timestamp: number,     // Unix seconds
- * }
+ * Limitation: the calendar returns total *submission* counts per UTC day, not
+ * unique problems solved. See calendarToDateCounts() for the timezone note.
  */
 
 const LC_GRAPHQL_URL = "https://leetcode.com/graphql";
 
-const RECENT_AC_QUERY = `
-  query recentAcSubmissions($username: String!, $limit: Int!) {
-    recentAcSubmissionList(username: $username, limit: $limit) {
-      id
-      title
-      titleSlug
-      timestamp
+const SUBMISSION_CALENDAR_QUERY = `
+  query submissionCalendar($username: String!) {
+    matchedUser(username: $username) {
+      submissionCalendar
     }
   }
 `;
 
 /**
- * Fetches recent accepted LeetCode submissions for a given username.
- * The public API is limited to the last 20 submissions.
- * Authentication (session cookie) is forwarded automatically by the browser
- * when the user is logged in to LeetCode.
+ * Fetches the raw submissionCalendar for a LeetCode user.
+ *
+ * The field is a JSON-encoded string like:
+ *   '{"1609459200": 3, "1609545600": 1, ...}'
+ * where keys are Unix timestamps (seconds) aligned to UTC midnight, and
+ * values are the number of accepted submissions on that day.
+ *
+ * Authentication note: `credentials: "include"` forwards the user's
+ * LEETCODE_SESSION cookie automatically when the browser has an active
+ * LeetCode session, which is required to view another user's calendar on
+ * private profiles.
  *
  * @param {string} username
- * @param {number} [limit=20]
- * @returns {Promise<{submissions: Array, error: string|null}>}
+ * @returns {Promise<{ calendar: Object.<string, number>|null, error: string|null }>}
+ *   `calendar` maps UTC-midnight Unix timestamps (as strings) → daily count.
  */
-async function getLeetCodeSubmissions(username, limit = 20) {
-  if (!username) return { submissions: [], error: null };
+async function getLeetCodeSubmissionCalendar(username) {
+  if (!username) return { calendar: null, error: null };
 
   try {
     const response = await fetch(LC_GRAPHQL_URL, {
@@ -51,33 +48,88 @@ async function getLeetCodeSubmissions(username, limit = 20) {
         Referer: "https://leetcode.com",
       },
       body: JSON.stringify({
-        query: RECENT_AC_QUERY,
-        variables: { username, limit },
+        query: SUBMISSION_CALENDAR_QUERY,
+        variables: { username },
       }),
     });
 
     if (!response.ok) {
-      return { submissions: [], error: `HTTP ${response.status}` };
+      return { calendar: null, error: `HTTP ${response.status}` };
     }
 
     const data = await response.json();
 
     if (data.errors) {
       const msg = data.errors.map((e) => e.message).join("; ");
-      return { submissions: [], error: msg };
+      return { calendar: null, error: msg };
     }
 
-    const list = data?.data?.recentAcSubmissionList ?? [];
+    const calendarJson = data?.data?.matchedUser?.submissionCalendar;
 
-    const submissions = list.map((s) => ({
-      platform: PLATFORMS.LEETCODE,
-      problemId: s.titleSlug,
-      problemName: s.title,
-      timestamp: Number(s.timestamp),
-    }));
+    if (!calendarJson) {
+      // Public profile with no activity, or username not found.
+      return { calendar: {}, error: null };
+    }
 
-    return { submissions, error: null };
+    return { calendar: parseSubmissionCalendar(calendarJson), error: null };
   } catch (err) {
-    return { submissions: [], error: err.message };
+    return { calendar: null, error: err.message };
   }
+}
+
+/**
+ * Parses the raw submissionCalendar JSON string into a plain object.
+ *
+ * @param {string} jsonStr  e.g. '{"1609459200": 3, "1609545600": 1}'
+ * @returns {Object.<string, number>}  { [unixSecondsStr]: submissionCount }
+ */
+function parseSubmissionCalendar(jsonStr) {
+  try {
+    return JSON.parse(jsonStr);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Converts a raw submissionCalendar { [unixSeconds]: count } object into a
+ * date-keyed map { [dateKey: "YYYY-MM-DD"]: count }.
+ *
+ * Timezone note: LeetCode stores calendar timestamps as UTC midnight
+ * boundaries (e.g. 1609459200 = 2021-01-01 00:00:00 UTC). We extract the
+ * date using UTC methods so the keys match LeetCode's own day groupings.
+ * For users in strongly negative UTC offsets (e.g. UTC-8), a submission made
+ * late in their local evening will appear under the NEXT UTC date in the
+ * calendar — this is an inherent limitation of the calendar API and cannot
+ * be corrected without individual submission timestamps.
+ *
+ * @param {Object.<string, number>} calendar  From parseSubmissionCalendar()
+ * @returns {Object.<string, number>}
+ */
+function calendarToDateCounts(calendar) {
+  const result = {};
+  for (const [tsStr, count] of Object.entries(calendar)) {
+    const ms = Number(tsStr) * 1000;
+    const d = new Date(ms);
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    const dateKey = `${year}-${month}-${day}`;
+    // Accumulate in case two timestamps collapse to the same UTC date.
+    result[dateKey] = (result[dateKey] ?? 0) + count;
+  }
+  return result;
+}
+
+/**
+ * Sums submission counts from a dateKey → count map for the given date keys.
+ *
+ * Safe to call with date keys outside the calendar range — they contribute 0.
+ *
+ * @param {Object.<string, number>} dateCounts  From calendarToDateCounts()
+ * @param {string[]} dateKeys  "YYYY-MM-DD" strings (e.g. from getCalendarWeekDateKeys())
+ * @returns {number}
+ */
+function sumSubmissionsForDates(dateCounts, dateKeys) {
+  return dateKeys.reduce((sum, key) => sum + (dateCounts[key] ?? 0), 0);
 }
