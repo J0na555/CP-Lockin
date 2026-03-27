@@ -67,7 +67,7 @@ async function runSync() {
     }
   }
 
-  // --- Codeforces: individual submission path (unchanged) ---
+  // --- Codeforces: individual submission path ----
   if (settings.codeforcesHandle) {
     const { submissionsByDate, error } = await fetchSubmissions(
       PLATFORMS.CODEFORCES,
@@ -85,10 +85,37 @@ async function runSync() {
 }
 
 // ---------------------------------------------------------------------------
-// Message handler (popup → background)
+// Message handler (popup/options/dashboard → background)
 // ---------------------------------------------------------------------------
 
-browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+/**
+ * Accept only messages from this extension's own contexts.
+ *
+ * @param {browser.runtime.MessageSender} sender
+ * @returns {boolean}
+ */
+function isTrustedInternalSender(sender) {
+  // Most extension-context messages provide sender.id.
+  if (sender?.id) {
+    return sender.id === browser.runtime.id;
+  }
+
+  // Fallback for contexts where id may be omitted but URL is available.
+  const extensionOrigin = browser.runtime.getURL("");
+  return typeof sender?.url === "string" && sender.url.startsWith(extensionOrigin);
+}
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!isTrustedInternalSender(sender)) {
+    sendResponse({ ok: false, error: "Unauthorized message sender." });
+    return false;
+  }
+
+  if (!message || typeof message !== "object" || typeof message.type !== "string") {
+    sendResponse({ ok: false, error: "Invalid message payload." });
+    return false;
+  }
+
   if (message.type === "sync") {
     runSync()
       .then((result) => sendResponse(result))
@@ -103,6 +130,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  sendResponse({ ok: false, error: `Unsupported message type: ${message.type}` });
   return false;
 });
 
