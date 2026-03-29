@@ -214,6 +214,8 @@ async function initDefaults() {
       [STORAGE_KEYS.SUBMISSIONS]: {},
       [STORAGE_KEYS.LAST_SYNC]: {},
       [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
+      [STORAGE_KEYS.WEEKLY_STATS]: {},
+      [STORAGE_KEYS.LAST_WEEK_KEY]: "",
     });
   }
 }

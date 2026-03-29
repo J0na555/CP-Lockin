@@ -39,6 +39,7 @@
       "src/api/platformFactory.js",
       "src/services/statsService.js",
       "src/services/streakService.js",
+      "src/services/weeklyService.js",
       "src/background/service-worker.js"
     ]
   },

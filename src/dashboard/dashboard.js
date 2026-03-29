@@ -152,35 +152,121 @@ function renderSummaryStats(dailyData, heatmapRange) {
     if (lc > 0 && cf > 0) bothDays++;
   }
 
-  const weekKeys = getCalendarWeekDateKeys();
-  let weekLc = 0;
-  let weekCf = 0;
-  for (const k of weekKeys) {
-    const d = dailyData[k];
-    if (!d) continue;
-    weekLc += d.leetcode ?? 0;
-    weekCf += d.codeforces ?? 0;
-  }
-  const overallWeekSolved = weekLc + weekCf;
-  const weeklyGoal = Number(window.__dashboardWeeklyGoal) > 0
-    ? Number(window.__dashboardWeeklyGoal)
-    : DEFAULTS.weeklyGoal;
-  const weekProgressRatio = weeklyGoal > 0 ? Math.min(overallWeekSolved / weeklyGoal, 1) : 0;
-  const weekProgressPercent = Math.round(weekProgressRatio * 100);
-
   document.getElementById("stat-active-days").textContent = activeDays;
   document.getElementById("stat-both-days").textContent = bothDays;
   document.getElementById("stat-total-solved").textContent = totalSolved;
-  document.getElementById("stat-week-lc").textContent = weekLc;
-  document.getElementById("stat-week-cf").textContent = weekCf;
-  document.getElementById("stat-total-all").textContent = overallWeekSolved;
+}
+
+function getCurrentWeekFromDailyData(dailyData) {
+  const weekKeys = getCalendarWeekDateKeys();
+  let lc = 0;
+  let cf = 0;
+  for (const k of weekKeys) {
+    const d = dailyData[k];
+    if (!d) continue;
+    lc += d.leetcode ?? 0;
+    cf += d.codeforces ?? 0;
+  }
+  return { lc, cf, total: lc + cf };
+}
+
+function getWeekDateKeysByOffset(offsetWeeks, includeFullWeek = true) {
+  const base = new Date();
+  base.setHours(0, 0, 0, 0);
+  const dow = (base.getDay() + 6) % 7;
+  const monday = new Date(base);
+  monday.setDate(base.getDate() - dow - offsetWeeks * 7);
+
+  const end = new Date(monday);
+  end.setDate(monday.getDate() + 6);
+
+  const upperBound = includeFullWeek ? end : new Date();
+  upperBound.setHours(0, 0, 0, 0);
+
+  const keys = [];
+  const cursor = new Date(monday);
+  while (cursor <= end && cursor <= upperBound) {
+    keys.push(formatDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
+function getWeekFromDailyData(dailyData, offsetWeeks) {
+  const includeFullWeek = offsetWeeks > 0;
+  const weekKeys = getWeekDateKeysByOffset(offsetWeeks, includeFullWeek);
+  let lc = 0;
+  let cf = 0;
+  for (const k of weekKeys) {
+    const d = dailyData[k];
+    if (!d) continue;
+    lc += d.leetcode ?? 0;
+    cf += d.codeforces ?? 0;
+  }
+  return { lc, cf, total: lc + cf };
+}
+
+async function renderWeeklyProgress(dailyData) {
+  const weeklyStats = await getWeeklyStats();
+  const currentWeekKey = getISOWeekKey(new Date());
+  const previousWeekKey = getPreviousISOWeekKey(new Date());
+
+  const weeklyGoal = Number(window.__dashboardWeeklyGoal) > 0
+    ? Number(window.__dashboardWeeklyGoal)
+    : DEFAULTS.weeklyGoal;
+
+  const currentWeek = weeklyStats[currentWeekKey] ?? getCurrentWeekFromDailyData(dailyData);
+  // Fallback is critical for existing users who have last week data in submissions
+  // but no persisted weekly snapshot from older extension versions.
+  const previousWeek = weeklyStats[previousWeekKey] ?? getWeekFromDailyData(dailyData, 1);
+
+  const weekViews = {
+    current: {
+      key: currentWeekKey,
+      title: "This Week",
+      stats: currentWeek,
+    },
+    last: {
+      key: previousWeekKey,
+      title: "Last Week",
+      stats: previousWeek,
+    },
+  };
 
   const weeklyGoalEl = document.getElementById("weekly-progress-goal");
   const weeklyProgressPercentEl = document.getElementById("weekly-progress-percent");
   const weeklyProgressFillEl = document.getElementById("weekly-progress-fill");
+  const weeklyTitleEl = document.getElementById("weekly-progress-title");
+  const weeklyContextEl = document.getElementById("weekly-progress-total-context");
+  const currentBtn = document.getElementById("week-toggle-current");
+  const lastBtn = document.getElementById("week-toggle-last");
+
   if (weeklyGoalEl) weeklyGoalEl.textContent = String(weeklyGoal);
-  if (weeklyProgressPercentEl) weeklyProgressPercentEl.textContent = `${weekProgressPercent}% complete`;
-  if (weeklyProgressFillEl) weeklyProgressFillEl.style.width = `${weekProgressPercent}%`;
+
+  function applyWeekView(viewKey) {
+    const view = weekViews[viewKey];
+    const weekNo = view.key.split("-W")[1] ?? "--";
+    const weekProgressRatio = weeklyGoal > 0 ? Math.min(view.stats.total / weeklyGoal, 1) : 0;
+    const weekProgressPercent = Math.round(weekProgressRatio * 100);
+
+    if (weeklyTitleEl) weeklyTitleEl.textContent = `${view.title} (Week ${weekNo})`;
+    if (weeklyContextEl) weeklyContextEl.textContent = `${view.stats.total} / ${weeklyGoal}`;
+    document.getElementById("stat-week-lc").textContent = view.stats.lc;
+    document.getElementById("stat-week-cf").textContent = view.stats.cf;
+    document.getElementById("stat-total-all").textContent = view.stats.total;
+    if (weeklyProgressPercentEl) weeklyProgressPercentEl.textContent = `${weekProgressPercent}% complete`;
+    if (weeklyProgressFillEl) weeklyProgressFillEl.style.width = `${weekProgressPercent}%`;
+
+    const isCurrent = viewKey === "current";
+    currentBtn?.classList.toggle("is-active", isCurrent);
+    lastBtn?.classList.toggle("is-active", !isCurrent);
+    currentBtn?.setAttribute("aria-selected", String(isCurrent));
+    lastBtn?.setAttribute("aria-selected", String(!isCurrent));
+  }
+
+  currentBtn?.addEventListener("click", () => applyWeekView("current"));
+  lastBtn?.addEventListener("click", () => applyWeekView("last"));
+  applyWeekView("current");
 }
 
 async function loadWeeklyGoalSetting() {
@@ -304,6 +390,7 @@ async function init() {
   renderMonthLabels(heatmapRange);
   renderHeatmap(dailyData, heatmapRange);
   renderSummaryStats(dailyData, heatmapRange);
+  await renderWeeklyProgress(dailyData);
   renderWeeklyLineChart(dailyData, heatmapRange);
 }
 

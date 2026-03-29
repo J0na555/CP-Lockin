@@ -81,6 +81,21 @@ async function runSync() {
     }
   }
 
+  // Persist current ISO-week snapshot without recomputing historical weeks.
+  try {
+    const [submissionsByDate, lcCalendar] = await Promise.all([
+      getAllSubmissions(),
+      getLeetCodeCalendar(),
+    ]);
+    const mergedSubmissions = mergeCalendarIntoSubmissions(
+      submissionsByDate,
+      lcCalendar
+    );
+    await updateWeeklyStats(mergedSubmissions);
+  } catch (err) {
+    errors.push(`weekly-stats: ${err.message}`);
+  }
+
   return { ok: errors.length === 0, errors };
 }
 

@@ -191,6 +191,38 @@ body {
   font-weight: 700;
 }
 
+.weekly-toggle-row {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.weekly-toggle-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.weekly-toggle-btn:hover {
+  color: var(--color-text);
+}
+
+.weekly-toggle-btn.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+  background: rgba(88, 101, 242, 0.15);
+}
+
 
 /* ---- Heatmap section ---- */
 .heatmap-section {

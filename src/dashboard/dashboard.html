@@ -18,13 +18,13 @@
       <!-- Weekly progress (hero) -->
       <section class="weekly-progress-section">
         <div class="weekly-progress-header">
-          <h2 class="section-title">Weekly Progress</h2>
+          <h2 class="section-title" id="weekly-progress-title">Weekly Progress</h2>
           <span class="weekly-progress-goal">Goal: <span id="weekly-progress-goal">—</span></span>
         </div>
 
         <div class="weekly-progress-total-row">
           <span class="weekly-progress-total" id="stat-total-all">—</span>
-          <span class="weekly-progress-total-context">solved this week</span>
+          <span class="weekly-progress-total-context" id="weekly-progress-total-context">solved this week</span>
         </div>
 
         <div class="weekly-progress-bar-wrap" aria-hidden="true">
@@ -34,6 +34,30 @@
         <div class="weekly-progress-footer">
           <span id="weekly-progress-percent">0% complete</span>
           <span>LeetCode <strong id="stat-week-lc">—</strong> · Codeforces <strong id="stat-week-cf">—</strong></span>
+        </div>
+
+        <div class="weekly-toggle-row" role="tablist" aria-label="Weekly progress view">
+
+          <button
+            id="week-toggle-last"
+            class="weekly-toggle-btn"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            cursor="pointer"
+          >
+          ⬅️
+          </button>
+          <button
+          id="week-toggle-current"
+          class="weekly-toggle-btn is-active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          cursor="pointer"
+        >
+          ➡️
+        </button>
         </div>
       </section>
 
@@ -117,6 +141,7 @@
     <script src="../config/defaults.js"></script>
     <script src="utils/dateUtils.js"></script>
     <script src="services/trackerService.js"></script>
+    <script src="../services/weeklyService.js"></script>
     <script src="dashboard.js"></script>
   </body>
 </html>
