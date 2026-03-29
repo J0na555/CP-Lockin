@@ -15,34 +15,44 @@
         <h1>CP-Lockin <span class="subtitle">Activity</span></h1>
       </header>
 
+      <!-- Weekly progress (hero) -->
+      <section class="weekly-progress-section">
+        <div class="weekly-progress-header">
+          <h2 class="section-title">Weekly Progress</h2>
+          <span class="weekly-progress-goal">Goal: <span id="weekly-progress-goal">—</span></span>
+        </div>
+
+        <div class="weekly-progress-total-row">
+          <span class="weekly-progress-total" id="stat-total-all">—</span>
+          <span class="weekly-progress-total-context">solved this week</span>
+        </div>
+
+        <div class="weekly-progress-bar-wrap" aria-hidden="true">
+          <div class="weekly-progress-bar-fill" id="weekly-progress-fill"></div>
+        </div>
+
+        <div class="weekly-progress-footer">
+          <span id="weekly-progress-percent">0% complete</span>
+          <span>LeetCode <strong id="stat-week-lc">—</strong> · Codeforces <strong id="stat-week-cf">—</strong></span>
+        </div>
+      </section>
+
       <!-- Summary stat cards -->
       <section class="summary-section">
+        <div class="summary-card">
+          <div class="summary-label">Streak</div>
+          <div class="summary-value" id="stat-both-days">—</div>
+          <div class="summary-sub">days with CF + LC</div>
+        </div>
         <div class="summary-card">
           <div class="summary-label">Active days</div>
           <div class="summary-value" id="stat-active-days">—</div>
           <div class="summary-sub">last 52 weeks</div>
         </div>
         <div class="summary-card">
-          <div class="summary-label">Streak days</div>
-          <div class="summary-value" id="stat-both-days">—</div>
-          <div class="summary-sub">days with CF + LC</div>
-        </div>
-        <div class="summary-card summary-card-breakdown">
-          <div class="summary-label">Solved</div>
-          <ul class="summary-breakdown" aria-label="Problems solved breakdown">
-            <li>
-              <span class="summary-breakdown-label">Weekly LeetCode <span class="summary-breakdown-hint"></span></span>
-              <span class="summary-breakdown-value" id="stat-week-lc">—</span>
-            </li>
-            <li>
-              <span class="summary-breakdown-label">Weekly Codeforces <span class="summary-breakdown-hint"></span></span>
-              <span class="summary-breakdown-value" id="stat-week-cf">—</span>
-            </li>
-            <li class="summary-breakdown-overall">
-              <span class="summary-breakdown-label">Overall solved <span class="summary-breakdown-hint"></span></span>
-              <span class="summary-breakdown-value" id="stat-total-all">—</span>
-            </li>
-          </ul>
+          <div class="summary-label">Total solved</div>
+          <div class="summary-value" id="stat-total-solved">—</div>
+          <div class="summary-sub">last 52 weeks</div>
         </div>
       </section>
 

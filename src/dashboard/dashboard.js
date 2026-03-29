@@ -139,6 +139,7 @@ function renderSummaryStats(dailyData, heatmapRange) {
   const { dates } = heatmapRange;
   let activeDays = 0;
   let bothDays   = 0;
+  let totalSolved = 0;
 
   for (const dateKey of dates) {
     const d = dailyData[dateKey];
@@ -146,6 +147,7 @@ function renderSummaryStats(dailyData, heatmapRange) {
     const lc = d.leetcode   ?? 0;
     const cf = d.codeforces ?? 0;
     const total = lc + cf;
+    totalSolved += total;
     if (total > 0) activeDays++;
     if (lc > 0 && cf > 0) bothDays++;
   }
@@ -160,12 +162,39 @@ function renderSummaryStats(dailyData, heatmapRange) {
     weekCf += d.codeforces ?? 0;
   }
   const overallWeekSolved = weekLc + weekCf;
+  const weeklyGoal = Number(window.__dashboardWeeklyGoal) > 0
+    ? Number(window.__dashboardWeeklyGoal)
+    : DEFAULTS.weeklyGoal;
+  const weekProgressRatio = weeklyGoal > 0 ? Math.min(overallWeekSolved / weeklyGoal, 1) : 0;
+  const weekProgressPercent = Math.round(weekProgressRatio * 100);
 
   document.getElementById("stat-active-days").textContent = activeDays;
   document.getElementById("stat-both-days").textContent = bothDays;
+  document.getElementById("stat-total-solved").textContent = totalSolved;
   document.getElementById("stat-week-lc").textContent = weekLc;
   document.getElementById("stat-week-cf").textContent = weekCf;
   document.getElementById("stat-total-all").textContent = overallWeekSolved;
+
+  const weeklyGoalEl = document.getElementById("weekly-progress-goal");
+  const weeklyProgressPercentEl = document.getElementById("weekly-progress-percent");
+  const weeklyProgressFillEl = document.getElementById("weekly-progress-fill");
+  if (weeklyGoalEl) weeklyGoalEl.textContent = String(weeklyGoal);
+  if (weeklyProgressPercentEl) weeklyProgressPercentEl.textContent = `${weekProgressPercent}% complete`;
+  if (weeklyProgressFillEl) weeklyProgressFillEl.style.width = `${weekProgressPercent}%`;
+}
+
+async function loadWeeklyGoalSetting() {
+  try {
+    const result = await browser.storage.local.get(STORAGE_KEYS.SETTINGS);
+    const settings = result[STORAGE_KEYS.SETTINGS] ?? {};
+    const parsedGoal = parseInt(settings.weeklyGoal, 10);
+    window.__dashboardWeeklyGoal = Number.isFinite(parsedGoal) && parsedGoal > 0
+      ? parsedGoal
+      : DEFAULTS.weeklyGoal;
+  } catch (err) {
+    console.error("Failed to load weekly goal for dashboard:", err);
+    window.__dashboardWeeklyGoal = DEFAULTS.weeklyGoal;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -265,6 +294,8 @@ function renderWeeklyLineChart(dailyData, heatmapRange) {
 
 async function init() {
   tooltipEl = document.getElementById("tooltip");
+
+  await loadWeeklyGoalSetting();
 
   const heatmapRange = getHeatmapRange(52);
   const dailyData    = await getDailyActivity();
