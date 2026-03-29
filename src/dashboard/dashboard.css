@@ -6,13 +6,14 @@
 }
 
 :root {
-  --color-bg:          #0f1117;
-  --color-surface:     #1a1d27;
-  --color-surface-2:   #23273a;
-  --color-border:      #2e3250;
-  --color-accent:      #5865f2;
-  --color-text:        #e0e2f0;
-  --color-text-muted:  #7b82a8;
+  --color-bg:          #1a1a2e;
+  --color-surface:     #16213e;
+  --color-surface-2:   #0f1729;
+  --color-border:      #2d2d44;
+  --color-accent:      #4a90e2;
+  --color-accent-soft: #6ba8f0;
+  --color-text:        #ffffff;
+  --color-text-muted:  #a9a9a9;
 
   /* Heatmap cell geometry */
   --cell-size: 13px;
@@ -35,7 +36,7 @@
   --both-3: #4ade80;
 
   /* Empty cell */
-  --empty-color: #1e2235;
+  --empty-color: #0f1729;
 
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
   --radius: 10px;
@@ -172,7 +173,7 @@ body {
 .weekly-progress-bar-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--color-accent), #7c86ff);
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-soft));
   transition: width 0.25s ease;
 }
 
@@ -220,7 +221,7 @@ body {
 .weekly-toggle-btn.is-active {
   border-color: var(--color-accent);
   color: var(--color-text);
-  background: rgba(88, 101, 242, 0.15);
+  background: rgba(74, 144, 226, 0.15);
 }
 
 
