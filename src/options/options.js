@@ -51,9 +51,12 @@ async function saveSettings(e) {
     return;
   }
 
+  const newCf = elCfHandle.value.trim();
+  const newLc = elLcHandle.value.trim();
+
   const settings = {
-    codeforcesHandle: elCfHandle.value.trim(),
-    leetcodeHandle: elLcHandle.value.trim(),
+    codeforcesHandle: newCf,
+    leetcodeHandle: newLc,
     weeklyGoal,
     dailyMinGoal,
     requireBothSitesForStreak: elRequireBothSitesForStreak.checked,
@@ -61,6 +64,36 @@ async function saveSettings(e) {
 
   try {
     const existing = await browser.storage.local.get(STORAGE_KEYS.SETTINGS);
+    const prev = existing[STORAGE_KEYS.SETTINGS] ?? {};
+    const oldCf = (prev.codeforcesHandle ?? "").trim();
+    const oldLc = (prev.leetcodeHandle ?? "").trim();
+
+    const cfConflict = oldCf !== "" && newCf !== oldCf;
+    const lcConflict = oldLc !== "" && newLc !== oldLc;
+
+    if (cfConflict || lcConflict) {
+      const reset = window.confirm(
+        "You changed a platform handle. Reset data or keep existing?\n\n" +
+          "OK — Reset: clear all tracked submissions and sync state.\n" +
+          "Cancel — Keep: keep existing data tagged with the previous handle(s)."
+      );
+      if (reset) {
+        await clearAllTrackingData({
+          codeforcesHandle: newCf,
+          leetcodeHandle: newLc,
+        });
+      } else {
+        if (lcConflict) {
+          await archiveCurrentLeetCodeCalendar(oldLc);
+          await setLeetCodeCalendarMeta({ handle: newLc, userFound: true });
+        }
+        await tagSubmissionsWithHandles({
+          codeforcesHandle: cfConflict ? oldCf : "",
+          leetcodeHandle: lcConflict ? oldLc : "",
+        });
+      }
+    }
+
     await browser.storage.local.set({
       [STORAGE_KEYS.SETTINGS]: {
         ...(existing[STORAGE_KEYS.SETTINGS] ?? {}),

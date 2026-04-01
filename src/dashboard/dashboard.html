@@ -16,6 +16,7 @@
       </header>
 
       <div id="dashboard-sync-error" class="status-banner status-banner--error hidden" role="alert"></div>
+      <div id="dashboard-lc-not-found" class="status-banner status-banner--error hidden" role="alert"></div>
 
       <!-- Weekly progress (hero) -->
       <section class="weekly-progress-section">
@@ -141,6 +142,7 @@
     <div class="tooltip" id="tooltip" hidden></div>
 
     <script src="../config/defaults.js"></script>
+    <script src="../storage/storageService.js"></script>
     <script src="utils/dateUtils.js"></script>
     <script src="services/trackerService.js"></script>
     <script src="../services/weeklyService.js"></script>

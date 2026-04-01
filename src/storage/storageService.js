@@ -30,6 +30,10 @@
  *   lastAttempt: number,
  *   errors: string[]
  * }
+ *
+ * leetcodeCalendarMeta: { handle: string, userFound: boolean }
+ *
+ * leetcodeCalendarArchive: { [handle: string]: { [dateKey: string]: number } }
  */
 
 // ---------------------------------------------------------------------------
@@ -262,6 +266,223 @@ async function setLeetCodeCalendar(calendarByDate) {
   });
 }
 
+/**
+ * @returns {Promise<{ handle: string, userFound: boolean }>}
+ */
+async function getLeetCodeCalendarMeta() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR_META);
+  const raw = result[STORAGE_KEYS.LEETCODE_CALENDAR_META];
+  if (!raw || typeof raw !== "object") {
+    return { handle: "", userFound: true };
+  }
+  return {
+    handle: typeof raw.handle === "string" ? raw.handle : "",
+    userFound: raw.userFound !== false,
+  };
+}
+
+/**
+ * @param {{ handle: string, userFound: boolean }} meta
+ */
+async function setLeetCodeCalendarMeta(meta) {
+  await browser.storage.local.set({
+    [STORAGE_KEYS.LEETCODE_CALENDAR_META]: {
+      handle: typeof meta?.handle === "string" ? meta.handle : "",
+      userFound: meta?.userFound !== false,
+    },
+  });
+}
+
+/**
+ * @returns {Promise<Object.<string, Object.<string, number>>>}
+ */
+async function getLeetCodeCalendarArchive() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR_ARCHIVE);
+  const raw = result[STORAGE_KEYS.LEETCODE_CALENDAR_ARCHIVE];
+  return raw && typeof raw === "object" ? raw : {};
+}
+
+/**
+ * Date-keyed LeetCode counts that apply to the configured handle (or legacy untagged data).
+ *
+ * @param {{ leetcodeHandle?: string }} settings
+ * @returns {Promise<Object.<string, number>>}
+ */
+async function getLeetCodeDateCountsForSettings(settings) {
+  const h = (settings.leetcodeHandle ?? "").trim();
+  if (!h) return {};
+
+  const [calResult, rawMetaResult] = await Promise.all([
+    browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR),
+    browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR_META),
+  ]);
+  const calendar = calResult[STORAGE_KEYS.LEETCODE_CALENDAR] ?? {};
+  const rawMeta = rawMetaResult[STORAGE_KEYS.LEETCODE_CALENDAR_META];
+
+  if (rawMeta === undefined) {
+    return calendar;
+  }
+
+  const meta = {
+    handle: typeof rawMeta.handle === "string" ? rawMeta.handle : "",
+    userFound: rawMeta.userFound !== false,
+  };
+  if (meta.userFound === false && meta.handle === h) return {};
+  if (meta.userFound && meta.handle === h) return calendar;
+  return {};
+}
+
+/**
+ * @param {{ leetcodeHandle?: string }} settings
+ * @param {{ handle: string, userFound: boolean }} meta
+ * @returns {boolean}
+ */
+function isLeetCodeUserNotFound(settings, meta) {
+  const h = (settings.leetcodeHandle ?? "").trim();
+  if (!h) return false;
+  if (!meta || typeof meta !== "object") return false;
+  const mh = (meta.handle ?? "").trim();
+  return meta.userFound === false && mh === h;
+}
+
+/**
+ * @param {{ leetcodeHandle?: string }} settings
+ * @returns {Promise<boolean>}
+ */
+async function isLeetCodeUserNotFoundForSettings(settings) {
+  return isLeetCodeUserNotFound(settings, await getLeetCodeCalendarMeta());
+}
+
+/**
+ * @param {Object.<string, Object.<string, Array>>} submissionsByDate
+ * @param {{ codeforcesHandle?: string, leetcodeHandle?: string }} settings
+ * @returns {Object.<string, Object.<string, Array>>}
+ */
+function filterSubmissionsByPlatformHandles(submissionsByDate, settings) {
+  const cfH = (settings.codeforcesHandle ?? "").trim();
+  const lcH = (settings.leetcodeHandle ?? "").trim();
+  const out = {};
+
+  for (const [dateKey, bucket] of Object.entries(submissionsByDate)) {
+    if (!bucket || typeof bucket !== "object") continue;
+    const cfRaw = bucket[PLATFORMS.CODEFORCES] ?? [];
+    const lcRaw = bucket[PLATFORMS.LEETCODE] ?? [];
+    const cf = Array.isArray(cfRaw)
+      ? cfRaw.filter((s) => !s?.handle || s.handle === cfH)
+      : [];
+    const lc = Array.isArray(lcRaw)
+      ? lcRaw.filter((s) => !s?.handle || s.handle === lcH)
+      : [];
+    if (cf.length > 0 || lc.length > 0) {
+      out[dateKey] = {
+        ...bucket,
+        [PLATFORMS.CODEFORCES]: cf,
+        [PLATFORMS.LEETCODE]: lc,
+      };
+    }
+  }
+  return out;
+}
+
+/**
+ * Moves the active LeetCode calendar into the archive under `oldHandle`, then clears the active key.
+ *
+ * @param {string} oldHandle
+ */
+async function archiveCurrentLeetCodeCalendar(oldHandle) {
+  const h = oldHandle.trim();
+  if (!h) return;
+
+  const current = (await browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR))[
+    STORAGE_KEYS.LEETCODE_CALENDAR
+  ];
+  if (!current || typeof current !== "object" || Object.keys(current).length === 0) {
+    return;
+  }
+
+  const arch = await getLeetCodeCalendarArchive();
+  const prev = arch[h] && typeof arch[h] === "object" ? arch[h] : {};
+  const merged = { ...prev };
+  for (const [dk, n] of Object.entries(current)) {
+    const add = Number(n);
+    merged[dk] = (merged[dk] ?? 0) + (Number.isFinite(add) ? add : 0);
+  }
+  arch[h] = merged;
+
+  await browser.storage.local.set({
+    [STORAGE_KEYS.LEETCODE_CALENDAR_ARCHIVE]: arch,
+    [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
+  });
+}
+
+/**
+ * Sets `handle` on stored submission rows that do not have one (legacy / pre-tag data).
+ *
+ * @param {{ codeforcesHandle?: string, leetcodeHandle?: string }} handles
+ */
+async function tagSubmissionsWithHandles(handles) {
+  const cfTag = (handles.codeforcesHandle ?? "").trim();
+  const lcTag = (handles.leetcodeHandle ?? "").trim();
+  if (!cfTag && !lcTag) return;
+
+  const all = await getAllSubmissions();
+  let dirty = false;
+
+  for (const dateKey of Object.keys(all)) {
+    const bucket = all[dateKey];
+    if (!bucket || typeof bucket !== "object") continue;
+
+    const cf = bucket[PLATFORMS.CODEFORCES];
+    if (cfTag && Array.isArray(cf)) {
+      for (const sub of cf) {
+        if (sub && typeof sub === "object" && !sub.handle) {
+          sub.handle = cfTag;
+          dirty = true;
+        }
+      }
+    }
+
+    const lc = bucket[PLATFORMS.LEETCODE];
+    if (lcTag && Array.isArray(lc)) {
+      for (const sub of lc) {
+        if (sub && typeof sub === "object" && !sub.handle) {
+          sub.handle = lcTag;
+          dirty = true;
+        }
+      }
+    }
+  }
+
+  if (dirty) {
+    await browser.storage.local.set({ [STORAGE_KEYS.SUBMISSIONS]: all });
+  }
+}
+
+/**
+ * Clears submissions, LeetCode calendar state, weekly snapshots, and sync cursors (full reset).
+ *
+ * @param {{ codeforcesHandle: string, leetcodeHandle: string }} nextHandles  Handles after save (may be empty).
+ */
+async function clearAllTrackingData(nextHandles) {
+  await browser.storage.local.set({
+    [STORAGE_KEYS.SUBMISSIONS]: {},
+    [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
+    [STORAGE_KEYS.LEETCODE_CALENDAR_META]: {
+      handle: (nextHandles.leetcodeHandle ?? "").trim(),
+      userFound: true,
+    },
+    [STORAGE_KEYS.LEETCODE_CALENDAR_ARCHIVE]: {},
+    [STORAGE_KEYS.CF_INCREMENTAL_SYNC]: {
+      handle: (nextHandles.codeforcesHandle ?? "").trim(),
+      lastSyncTimestamp: 0,
+    },
+    [STORAGE_KEYS.LAST_SYNC]: {},
+    [STORAGE_KEYS.WEEKLY_STATS]: {},
+    [STORAGE_KEYS.LAST_WEEK_KEY]: "",
+    [STORAGE_KEYS.SYNC_STATUS]: { lastAttempt: 0, errors: [] },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Initialise defaults on first install
 // ---------------------------------------------------------------------------
@@ -282,6 +503,8 @@ async function initDefaults() {
       [STORAGE_KEYS.LAST_SYNC]: {},
       [STORAGE_KEYS.SYNC_STATUS]: { lastAttempt: 0, errors: [] },
       [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
+      [STORAGE_KEYS.LEETCODE_CALENDAR_META]: { handle: "", userFound: true },
+      [STORAGE_KEYS.LEETCODE_CALENDAR_ARCHIVE]: {},
       [STORAGE_KEYS.WEEKLY_STATS]: {},
       [STORAGE_KEYS.LAST_WEEK_KEY]: "",
     });

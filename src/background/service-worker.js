@@ -57,16 +57,24 @@ async function runSync() {
     const settings = await getSettings();
 
     // --- LeetCode: calendar-based sync ---
-    if (settings.leetcodeHandle) {
-      const { calendar, error } = await getLeetCodeSubmissionCalendar(
-        settings.leetcodeHandle
+    const lcHandleTrim = (settings.leetcodeHandle ?? "").trim();
+    if (lcHandleTrim) {
+      const { calendar, error, userNotFound } = await getLeetCodeSubmissionCalendar(
+        lcHandleTrim
       );
       if (error) {
         errors.push(`${PLATFORMS.LEETCODE}: ${error}`);
-      } else if (calendar) {
-        await setLeetCodeCalendar(calendarToDateCounts(calendar));
+      } else if (userNotFound) {
+        await setLeetCodeCalendar({});
+        await setLeetCodeCalendarMeta({ handle: lcHandleTrim, userFound: false });
+      } else {
+        await setLeetCodeCalendar(calendarToDateCounts(calendar ?? {}));
+        await setLeetCodeCalendarMeta({ handle: lcHandleTrim, userFound: true });
         await setLastSync(PLATFORMS.LEETCODE, Date.now());
       }
+    } else {
+      await setLeetCodeCalendar({});
+      await setLeetCodeCalendarMeta({ handle: "", userFound: true });
     }
 
     // --- Codeforces: individual submission path (incremental after first full sync) ----
@@ -96,13 +104,14 @@ async function runSync() {
 
     // Persist current ISO-week snapshot without recomputing historical weeks.
     try {
-      const [submissionsByDate, lcCalendar] = await Promise.all([
-        getAllSubmissions(),
-        getLeetCodeCalendar(),
-      ]);
+      const submissionsByDate = filterSubmissionsByPlatformHandles(
+        await getAllSubmissions(),
+        settings
+      );
+      const lcCounts = await getLeetCodeDateCountsForSettings(settings);
       const mergedSubmissions = mergeCalendarIntoSubmissions(
         submissionsByDate,
-        lcCalendar
+        lcCounts
       );
       await updateWeeklyStats(mergedSubmissions);
     } catch (err) {
@@ -216,25 +225,25 @@ function mergeCalendarIntoSubmissions(submissionsByDate, lcCalendar) {
  * Reads storage and computes the full stats payload for the popup.
  */
 async function buildStatsResponse() {
-  const [submissionsByDate, settings, lcCalendar, syncStatus] = await Promise.all([
+  const [submissionsByDate, settings, syncStatus] = await Promise.all([
     getAllSubmissions(),
     getSettings(),
-    getLeetCodeCalendar(),
     getSyncStatus(),
   ]);
 
-  const mergedSubmissions = mergeCalendarIntoSubmissions(
-    submissionsByDate,
-    lcCalendar
-  );
+  const filtered = filterSubmissionsByPlatformHandles(submissionsByDate, settings);
+  const lcCounts = await getLeetCodeDateCountsForSettings(settings);
+  const mergedSubmissions = mergeCalendarIntoSubmissions(filtered, lcCounts);
 
   const stats = computeStats(mergedSubmissions, settings);
   const streak = calculateStreak(mergedSubmissions, settings);
+
+  const leetCodeUserNotFound = await isLeetCodeUserNotFoundForSettings(settings);
 
   const lastSync = {
     [PLATFORMS.CODEFORCES]: await getLastSync(PLATFORMS.CODEFORCES),
     [PLATFORMS.LEETCODE]: await getLastSync(PLATFORMS.LEETCODE),
   };
 
-  return { stats, streak, lastSync, settings, syncStatus };
+  return { stats, streak, lastSync, settings, syncStatus, leetCodeUserNotFound };
 }

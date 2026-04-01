@@ -19,6 +19,7 @@ const elDailyBadge = document.getElementById("daily-goal-badge");
 const elSyncStatus = document.getElementById("sync-status");
 const elNoticeNoHandle = document.getElementById("notice-no-handle");
 const elNoticeSyncError = document.getElementById("notice-sync-error");
+const elNoticeLcNotFound = document.getElementById("notice-lc-not-found");
 const btnSync      = document.getElementById("btn-sync");
 const btnSettings  = document.getElementById("btn-settings");
 const btnDashboard = document.getElementById("btn-dashboard");
@@ -28,7 +29,11 @@ const btnDashboard = document.getElementById("btn-dashboard");
 // ---------------------------------------------------------------------------
 
 function renderStats(payload) {
-  const { stats, streak, lastSync, settings, syncStatus } = payload;
+  const { stats, streak, lastSync, settings, syncStatus, leetCodeUserNotFound } = payload;
+
+  if (elNoticeLcNotFound) {
+    elNoticeLcNotFound.classList.toggle("hidden", !leetCodeUserNotFound);
+  }
 
   // Today
   elTodayCount.textContent = stats.todayCount;

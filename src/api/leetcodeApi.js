@@ -33,11 +33,12 @@ const SUBMISSION_CALENDAR_QUERY = `
  * private profiles.
  *
  * @param {string} username
- * @returns {Promise<{ calendar: Object.<string, number>|null, error: string|null }>}
+ * @returns {Promise<{ calendar: Object.<string, number>|null, error: string|null, userNotFound: boolean }>}
  *   `calendar` maps UTC-midnight Unix timestamps (as strings) → daily count.
+ *   `userNotFound` is true when LeetCode has no user for this handle (matchedUser === null).
  */
 async function getLeetCodeSubmissionCalendar(username) {
-  if (!username) return { calendar: null, error: null };
+  if (!username) return { calendar: null, error: null, userNotFound: false };
 
   try {
     const response = await fetchWithTimeout(LC_GRAPHQL_URL, {
@@ -54,26 +55,30 @@ async function getLeetCodeSubmissionCalendar(username) {
     });
 
     if (!response.ok) {
-      return { calendar: null, error: `HTTP ${response.status}` };
+      return { calendar: null, error: `HTTP ${response.status}`, userNotFound: false };
     }
 
     const data = await response.json();
 
     if (data.errors) {
       const msg = data.errors.map((e) => e.message).join("; ");
-      return { calendar: null, error: msg };
+      return { calendar: null, error: msg, userNotFound: false };
     }
 
-    const calendarJson = data?.data?.matchedUser?.submissionCalendar;
+    const matchedUser = data?.data?.matchedUser;
+    if (matchedUser === null) {
+      return { calendar: null, error: null, userNotFound: true };
+    }
+
+    const calendarJson = matchedUser?.submissionCalendar;
 
     if (!calendarJson) {
-      // Public profile with no activity, or username not found.
-      return { calendar: {}, error: null };
+      return { calendar: {}, error: null, userNotFound: false };
     }
 
-    return { calendar: parseSubmissionCalendar(calendarJson), error: null };
+    return { calendar: parseSubmissionCalendar(calendarJson), error: null, userNotFound: false };
   } catch (err) {
-    return { calendar: null, error: err.message };
+    return { calendar: null, error: err.message, userNotFound: false };
   }
 }
 

@@ -70,6 +70,10 @@ const STORAGE_KEYS = {
   // Per-day LeetCode submission counts sourced from submissionCalendar.
   // Shape: { [dateKey: "YYYY-MM-DD"]: number }
   LEETCODE_CALENDAR: "leetcodeCalendar",
+  /** { handle: string, userFound: boolean } — last sync outcome for the calendar blob. */
+  LEETCODE_CALENDAR_META: "leetcodeCalendarMeta",
+  /** Archived calendars when user keeps data after a handle change. Shape: { [handle]: { [dateKey]: number } } */
+  LEETCODE_CALENDAR_ARCHIVE: "leetcodeCalendarArchive",
   // Weekly solved snapshots keyed by ISO week (YYYY-W##).
   // Shape: { [weekKey: "YYYY-W##"]: { lc: number, cf: number, total: number } }
   WEEKLY_STATS: "weeklyStats",

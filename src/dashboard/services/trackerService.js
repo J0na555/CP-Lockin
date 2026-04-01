@@ -6,19 +6,23 @@
  * accurate counts). Codeforces counts come from the individual submissions
  * storage key.
  *
- * Depends on: STORAGE_KEYS and PLATFORMS from src/config/defaults.js
+ * Depends on: STORAGE_KEYS, PLATFORMS (defaults), getSettings,
+ * getLeetCodeDateCountsForSettings, getLeetCodeCalendarMeta, isLeetCodeUserNotFound (storageService)
  *
- * @returns {Promise<Object.<string, { leetcode: number, codeforces: number }>>}
+ * @returns {Promise<{ daily: Object.<string, { leetcode: number, codeforces: number }>, leetCodeUserNotFound: boolean }>}
  *   Keys are "YYYY-MM-DD" date strings; values are solve counts.
  */
 async function getDailyActivity() {
-  const [submissionsResult, calendarResult] = await Promise.all([
+  const settings = await getSettings();
+  const [submissionsResult, lcCounts, meta] = await Promise.all([
     browser.storage.local.get(STORAGE_KEYS.SUBMISSIONS),
-    browser.storage.local.get(STORAGE_KEYS.LEETCODE_CALENDAR),
+    getLeetCodeDateCountsForSettings(settings),
+    getLeetCodeCalendarMeta(),
   ]);
 
   const rawSubmissions = submissionsResult[STORAGE_KEYS.SUBMISSIONS] ?? {};
-  const lcCalendar = calendarResult[STORAGE_KEYS.LEETCODE_CALENDAR] ?? {};
+  const cfH = (settings.codeforcesHandle ?? "").trim();
+  const lcH = (settings.leetcodeHandle ?? "").trim();
 
   const daily = {};
 
@@ -28,12 +32,14 @@ async function getDailyActivity() {
   for (const [dateKey, bucket] of Object.entries(rawSubmissions)) {
     if (!bucket || typeof bucket !== "object") continue;
 
-    const codeforces = Array.isArray(bucket[PLATFORMS.CODEFORCES])
-      ? bucket[PLATFORMS.CODEFORCES].length
-      : 0;
-    const leetcodeLegacy = Array.isArray(bucket[PLATFORMS.LEETCODE])
-      ? bucket[PLATFORMS.LEETCODE].length
-      : 0;
+    const cfArr = Array.isArray(bucket[PLATFORMS.CODEFORCES])
+      ? bucket[PLATFORMS.CODEFORCES]
+      : [];
+    const lcArr = Array.isArray(bucket[PLATFORMS.LEETCODE])
+      ? bucket[PLATFORMS.LEETCODE]
+      : [];
+    const codeforces = cfArr.filter((s) => !s?.handle || s.handle === cfH).length;
+    const leetcodeLegacy = lcArr.filter((s) => !s?.handle || s.handle === lcH).length;
 
     if (codeforces > 0 || leetcodeLegacy > 0) {
       daily[dateKey] = { leetcode: leetcodeLegacy, codeforces };
@@ -42,14 +48,16 @@ async function getDailyActivity() {
 
   // Pass 2: calendar counts override LeetCode for every date they cover.
   // Once the first calendar sync has run this supersedes all legacy objects.
-  for (const [dateKey, count] of Object.entries(lcCalendar)) {
+  for (const [dateKey, count] of Object.entries(lcCounts)) {
     if (count > 0) {
       if (!daily[dateKey]) daily[dateKey] = { leetcode: 0, codeforces: 0 };
       daily[dateKey].leetcode = count;
     }
   }
 
-  return daily;
+  const leetCodeUserNotFound = isLeetCodeUserNotFound(settings, meta);
+
+  return { daily, leetCodeUserNotFound };
 }
 
 /**

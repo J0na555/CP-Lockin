@@ -18,14 +18,16 @@ const CF_INCREMENTAL_CHUNK = 500;
 
 /**
  * @param {object} s  Raw Codeforces submission object
- * @returns {{ platform: string, problemId: string, problemName: string, timestamp: number }}
+ * @param {string} handle  Codeforces handle this row was fetched for
+ * @returns {{ platform: string, problemId: string, problemName: string, timestamp: number, handle: string }}
  */
-function normalizeSubmission(s) {
+function normalizeSubmission(s, handle) {
   return {
     platform: PLATFORMS.CODEFORCES,
     problemId: `${s.problem.contestId ?? ""}${s.problem.index}`,
     problemName: s.problem.name,
     timestamp: s.creationTimeSeconds,
+    handle,
   };
 }
 
@@ -76,7 +78,7 @@ async function getCodeforcesSubmissions(handle, lastSyncTimestamp = 0) {
         if (s.verdict !== "OK") continue;
         const t = s.creationTimeSeconds;
         if (t > maxOkCreationSec) maxOkCreationSec = t;
-        submissions.push(normalizeSubmission(s));
+        submissions.push(normalizeSubmission(s, handle));
       }
       return { submissions, error: null, maxOkCreationSec };
     }
@@ -99,7 +101,7 @@ async function getCodeforcesSubmissions(handle, lastSyncTimestamp = 0) {
         }
         if (s.verdict === "OK") {
           if (t > maxOkCreationSec) maxOkCreationSec = t;
-          submissions.push(normalizeSubmission(s));
+          submissions.push(normalizeSubmission(s, handle));
         }
       }
 

@@ -74,6 +74,18 @@ function renderSyncError(syncStatus) {
   banner.classList.remove("hidden");
 }
 
+function renderLeetCodeUserNotFound(show) {
+  const banner = document.getElementById("dashboard-lc-not-found");
+  if (!banner) return;
+  if (!show) {
+    banner.classList.add("hidden");
+    banner.textContent = "";
+    return;
+  }
+  banner.textContent = "User not found";
+  banner.classList.remove("hidden");
+}
+
 // ---------------------------------------------------------------------------
 // Cell helpers
 // ---------------------------------------------------------------------------
@@ -459,11 +471,13 @@ async function init() {
   await loadWeeklyGoalSetting();
 
   const heatmapRange = getHeatmapRange(52);
-  const [dailyData, syncStatus] = await Promise.all([
+  const [activity, syncStatus] = await Promise.all([
     getDailyActivity(),
     getDashboardSyncStatus(),
   ]);
+  const dailyData = activity.daily;
 
+  renderLeetCodeUserNotFound(activity.leetCodeUserNotFound);
   renderSyncError(syncStatus);
 
   renderDayLabels();
