@@ -7,6 +7,54 @@ const DEFAULTS = {
   leetcodeHandle: "",
 };
 
+const FETCH_TIMEOUT_MS = 10000;
+
+/**
+ * Wraps fetch() with an abort timer so network calls fail fast instead of
+ * hanging indefinitely.
+ *
+ *
+ * @param {RequestInfo|URL} input
+ * @param {RequestInit} [init]
+ * @param {number} [timeoutMs=FETCH_TIMEOUT_MS]
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(input, init = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const upstreamSignal = init.signal;
+  let didTimeout = false;
+
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
+
+  function abortFromUpstream() {
+    controller.abort();
+  }
+
+  if (upstreamSignal) {
+    if (upstreamSignal.aborted) {
+      clearTimeout(timeoutId);
+      controller.abort();
+    } else {
+      upstreamSignal.addEventListener("abort", abortFromUpstream, { once: true });
+    }
+  }
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (didTimeout) {
+      throw new Error(`Request timed out after ${timeoutMs / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
+  }
+}
+
 const PLATFORMS = {
   CODEFORCES: "codeforces",
   LEETCODE: "leetcode",
@@ -16,6 +64,7 @@ const STORAGE_KEYS = {
   SETTINGS: "settings",
   SUBMISSIONS: "submissions",
   LAST_SYNC: "lastSync",
+  SYNC_STATUS: "syncStatus",
   // Per-day LeetCode submission counts sourced from submissionCalendar.
   // Shape: { [dateKey: "YYYY-MM-DD"]: number }
   LEETCODE_CALENDAR: "leetcodeCalendar",

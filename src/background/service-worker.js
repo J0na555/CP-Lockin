@@ -51,50 +51,60 @@ browser.alarms.onAlarm.addListener((alarm) => {
  * @returns {Promise<{ ok: boolean, errors: string[] }>}
  */
 async function runSync() {
-  const settings = await getSettings();
   const errors = [];
-
-  // --- LeetCode: calendar-based sync ---
-  if (settings.leetcodeHandle) {
-    const { calendar, error } = await getLeetCodeSubmissionCalendar(
-      settings.leetcodeHandle
-    );
-    if (error) {
-      errors.push(`${PLATFORMS.LEETCODE}: ${error}`);
-    } else if (calendar) {
-      await setLeetCodeCalendar(calendarToDateCounts(calendar));
-      await setLastSync(PLATFORMS.LEETCODE, Date.now());
-    }
-  }
-
-  // --- Codeforces: individual submission path ----
-  if (settings.codeforcesHandle) {
-    const { submissionsByDate, error } = await fetchSubmissions(
-      PLATFORMS.CODEFORCES,
-      settings.codeforcesHandle
-    );
-    if (error) {
-      errors.push(`${PLATFORMS.CODEFORCES}: ${error}`);
-    } else {
-      await bulkMergeSubmissions(PLATFORMS.CODEFORCES, submissionsByDate);
-      await setLastSync(PLATFORMS.CODEFORCES, Date.now());
-    }
-  }
-
-  // Persist current ISO-week snapshot without recomputing historical weeks.
+  const syncAttemptTime = Date.now();
   try {
-    const [submissionsByDate, lcCalendar] = await Promise.all([
-      getAllSubmissions(),
-      getLeetCodeCalendar(),
-    ]);
-    const mergedSubmissions = mergeCalendarIntoSubmissions(
-      submissionsByDate,
-      lcCalendar
-    );
-    await updateWeeklyStats(mergedSubmissions);
+    const settings = await getSettings();
+
+    // --- LeetCode: calendar-based sync ---
+    if (settings.leetcodeHandle) {
+      const { calendar, error } = await getLeetCodeSubmissionCalendar(
+        settings.leetcodeHandle
+      );
+      if (error) {
+        errors.push(`${PLATFORMS.LEETCODE}: ${error}`);
+      } else if (calendar) {
+        await setLeetCodeCalendar(calendarToDateCounts(calendar));
+        await setLastSync(PLATFORMS.LEETCODE, Date.now());
+      }
+    }
+
+    // --- Codeforces: individual submission path ----
+    if (settings.codeforcesHandle) {
+      const { submissionsByDate, error } = await fetchSubmissions(
+        PLATFORMS.CODEFORCES,
+        settings.codeforcesHandle
+      );
+      if (error) {
+        errors.push(`${PLATFORMS.CODEFORCES}: ${error}`);
+      } else {
+        await bulkMergeSubmissions(PLATFORMS.CODEFORCES, submissionsByDate);
+        await setLastSync(PLATFORMS.CODEFORCES, Date.now());
+      }
+    }
+
+    // Persist current ISO-week snapshot without recomputing historical weeks.
+    try {
+      const [submissionsByDate, lcCalendar] = await Promise.all([
+        getAllSubmissions(),
+        getLeetCodeCalendar(),
+      ]);
+      const mergedSubmissions = mergeCalendarIntoSubmissions(
+        submissionsByDate,
+        lcCalendar
+      );
+      await updateWeeklyStats(mergedSubmissions);
+    } catch (err) {
+      errors.push(`weekly-stats: ${err.message}`);
+    }
   } catch (err) {
-    errors.push(`weekly-stats: ${err.message}`);
+    errors.push(err?.message ?? "Unexpected sync error");
   }
+
+  await setSyncStatus({
+    lastAttempt: syncAttemptTime,
+    errors,
+  });
 
   return { ok: errors.length === 0, errors };
 }
@@ -195,10 +205,11 @@ function mergeCalendarIntoSubmissions(submissionsByDate, lcCalendar) {
  * Reads storage and computes the full stats payload for the popup.
  */
 async function buildStatsResponse() {
-  const [submissionsByDate, settings, lcCalendar] = await Promise.all([
+  const [submissionsByDate, settings, lcCalendar, syncStatus] = await Promise.all([
     getAllSubmissions(),
     getSettings(),
     getLeetCodeCalendar(),
+    getSyncStatus(),
   ]);
 
   const mergedSubmissions = mergeCalendarIntoSubmissions(
@@ -214,5 +225,5 @@ async function buildStatsResponse() {
     [PLATFORMS.LEETCODE]: await getLastSync(PLATFORMS.LEETCODE),
   };
 
-  return { stats, streak, lastSync, settings };
+  return { stats, streak, lastSync, settings, syncStatus };
 }

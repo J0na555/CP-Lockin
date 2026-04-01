@@ -26,7 +26,7 @@ async function getCodeforcesSubmissions(handle) {
   const url = `${CF_API_BASE}/user.status?handle=${encodeURIComponent(handle)}&from=1&count=10000`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetchWithTimeout(url);
     if (!response.ok) {
       return { submissions: [], error: `HTTP ${response.status}` };
     }

@@ -38,6 +38,37 @@ function hideTooltip() {
   if (tooltipEl) tooltipEl.setAttribute("hidden", "");
 }
 
+function formatRelativeTime(ms) {
+  if (!ms) return "";
+  const diff = Date.now() - ms;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function renderSyncError(syncStatus) {
+  const banner = document.getElementById("dashboard-sync-error");
+  if (!banner) return;
+
+  const errors = syncStatus?.errors ?? [];
+  if (errors.length === 0) {
+    banner.classList.add("hidden");
+    banner.textContent = "";
+    return;
+  }
+
+  const lastAttemptText = syncStatus?.lastAttempt
+    ? ` Last attempt: ${formatRelativeTime(syncStatus.lastAttempt)}.`
+    : "";
+
+  banner.textContent = `Latest sync failed, so dashboard data may be stale. ${errors.join(" | ")}.${lastAttemptText}`;
+  banner.classList.remove("hidden");
+}
+
 // ---------------------------------------------------------------------------
 // Cell helpers
 // ---------------------------------------------------------------------------
@@ -390,7 +421,12 @@ async function init() {
   await loadWeeklyGoalSetting();
 
   const heatmapRange = getHeatmapRange(52);
-  const dailyData    = await getDailyActivity();
+  const [dailyData, syncStatus] = await Promise.all([
+    getDailyActivity(),
+    getDashboardSyncStatus(),
+  ]);
+
+  renderSyncError(syncStatus);
 
   renderDayLabels();
   renderMonthLabels(heatmapRange);

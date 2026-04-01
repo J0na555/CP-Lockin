@@ -51,3 +51,17 @@ async function getDailyActivity() {
 
   return daily;
 }
+
+/**
+ * Returns the latest sync attempt and any errors recorded for it.
+ *
+ * @returns {Promise<{ lastAttempt: number, errors: string[] }>}
+ */
+async function getDashboardSyncStatus() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.SYNC_STATUS);
+  const status = result[STORAGE_KEYS.SYNC_STATUS] ?? {};
+  return {
+    lastAttempt: Number(status.lastAttempt) || 0,
+    errors: Array.isArray(status.errors) ? status.errors : [],
+  };
+}

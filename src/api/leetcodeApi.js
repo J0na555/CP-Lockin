@@ -40,7 +40,7 @@ async function getLeetCodeSubmissionCalendar(username) {
   if (!username) return { calendar: null, error: null };
 
   try {
-    const response = await fetch(LC_GRAPHQL_URL, {
+    const response = await fetchWithTimeout(LC_GRAPHQL_URL, {
       method: "POST",
       credentials: "include",
       headers: {

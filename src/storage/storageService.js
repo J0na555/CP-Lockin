@@ -20,6 +20,11 @@
  * lastSync: {
  *   [platform: string]: number  // Unix timestamp (ms)
  * }
+ *
+ * syncStatus: {
+ *   lastAttempt: number,
+ *   errors: string[]
+ * }
  */
 
 // ---------------------------------------------------------------------------
@@ -174,6 +179,36 @@ async function setLastSync(platform, timestampMs) {
 }
 
 // ---------------------------------------------------------------------------
+// Sync status
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the latest sync attempt status.
+ * @returns {Promise<{ lastAttempt: number, errors: string[] }>}
+ */
+async function getSyncStatus() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.SYNC_STATUS);
+  const status = result[STORAGE_KEYS.SYNC_STATUS] ?? {};
+  return {
+    lastAttempt: Number(status.lastAttempt) || 0,
+    errors: Array.isArray(status.errors) ? status.errors : [],
+  };
+}
+
+/**
+ * Persists the latest sync attempt status.
+ * @param {{ lastAttempt: number, errors: string[] }} syncStatus
+ */
+async function setSyncStatus(syncStatus) {
+  await browser.storage.local.set({
+    [STORAGE_KEYS.SYNC_STATUS]: {
+      lastAttempt: Number(syncStatus?.lastAttempt) || 0,
+      errors: Array.isArray(syncStatus?.errors) ? syncStatus.errors : [],
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // LeetCode submission calendar
 // ---------------------------------------------------------------------------
 
@@ -213,6 +248,7 @@ async function initDefaults() {
       },
       [STORAGE_KEYS.SUBMISSIONS]: {},
       [STORAGE_KEYS.LAST_SYNC]: {},
+      [STORAGE_KEYS.SYNC_STATUS]: { lastAttempt: 0, errors: [] },
       [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
       [STORAGE_KEYS.WEEKLY_STATS]: {},
       [STORAGE_KEYS.LAST_WEEK_KEY]: "",

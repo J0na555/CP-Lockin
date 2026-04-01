@@ -18,6 +18,7 @@ const elWeeklyBreakdown = document.getElementById("weekly-breakdown");
 const elDailyBadge = document.getElementById("daily-goal-badge");
 const elSyncStatus = document.getElementById("sync-status");
 const elNoticeNoHandle = document.getElementById("notice-no-handle");
+const elNoticeSyncError = document.getElementById("notice-sync-error");
 const btnSync      = document.getElementById("btn-sync");
 const btnSettings  = document.getElementById("btn-settings");
 const btnDashboard = document.getElementById("btn-dashboard");
@@ -27,7 +28,7 @@ const btnDashboard = document.getElementById("btn-dashboard");
 // ---------------------------------------------------------------------------
 
 function renderStats(payload) {
-  const { stats, streak, lastSync, settings } = payload;
+  const { stats, streak, lastSync, settings, syncStatus } = payload;
 
   // Today
   elTodayCount.textContent = stats.todayCount;
@@ -71,6 +72,7 @@ function renderStats(payload) {
   // No-handle notice
   const hasHandle = settings.codeforcesHandle || settings.leetcodeHandle;
   elNoticeNoHandle.classList.toggle("hidden", Boolean(hasHandle));
+  renderSyncError(syncStatus);
 }
 
 /**
@@ -94,14 +96,24 @@ function setLoadingState(loading) {
   btnSync.classList.toggle("spinning", loading);
 }
 
+function renderSyncError(syncStatus) {
+  const errors = syncStatus?.errors ?? [];
+  if (errors.length === 0) {
+    elNoticeSyncError.classList.add("hidden");
+    elNoticeSyncError.textContent = "";
+    return;
+  }
+
+  elNoticeSyncError.classList.remove("hidden");
+  elNoticeSyncError.textContent = `Last sync failed: ${errors.join(" | ")}`;
+}
+
 function showError(message) {
-  // Reuse the no-handle notice element for transient errors
-  elNoticeNoHandle.classList.remove("hidden");
-  elNoticeNoHandle.className = "notice notice--error";
-  elNoticeNoHandle.textContent = message;
+  elNoticeSyncError.classList.remove("hidden");
+  elNoticeSyncError.textContent = message;
   setTimeout(() => {
-    elNoticeNoHandle.className = "notice notice--warn hidden";
-    elNoticeNoHandle.textContent = "";
+    elNoticeSyncError.classList.add("hidden");
+    elNoticeSyncError.textContent = "";
   }, 4000);
 }
 
