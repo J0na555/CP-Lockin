@@ -63,6 +63,8 @@ const PLATFORMS = {
 const STORAGE_KEYS = {
   SETTINGS: "settings",
   SUBMISSIONS: "submissions",
+  /** Codeforces incremental sync: { handle: string, lastSyncTimestamp: number } ). */
+  CF_INCREMENTAL_SYNC: "cfIncrementalSync",
   LAST_SYNC: "lastSync",
   SYNC_STATUS: "syncStatus",
   // Per-day LeetCode submission counts sourced from submissionCalendar.

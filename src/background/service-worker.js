@@ -69,17 +69,28 @@ async function runSync() {
       }
     }
 
-    // --- Codeforces: individual submission path ----
+    // --- Codeforces: individual submission path (incremental after first full sync) ----
     if (settings.codeforcesHandle) {
-      const { submissionsByDate, error } = await fetchSubmissions(
+      const cfState = await getCfIncrementalSync();
+      let cfLastSyncTimestamp = cfState.lastSyncTimestamp;
+      if (cfState.handle !== settings.codeforcesHandle) {
+        cfLastSyncTimestamp = 0;
+      }
+
+      const { submissionsByDate, error, cfMaxOkCreationSec } = await fetchSubmissions(
         PLATFORMS.CODEFORCES,
-        settings.codeforcesHandle
+        settings.codeforcesHandle,
+        { cfLastSyncSec: cfLastSyncTimestamp }
       );
       if (error) {
         errors.push(`${PLATFORMS.CODEFORCES}: ${error}`);
       } else {
         await bulkMergeSubmissions(PLATFORMS.CODEFORCES, submissionsByDate);
         await setLastSync(PLATFORMS.CODEFORCES, Date.now());
+        await setCfIncrementalSync({
+          handle: settings.codeforcesHandle,
+          lastSyncTimestamp: Math.max(cfLastSyncTimestamp, cfMaxOkCreationSec || 0),
+        });
       }
     }
 

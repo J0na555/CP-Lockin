@@ -21,6 +21,11 @@
  *   [platform: string]: number  // Unix timestamp (ms)
  * }
  *
+ * cfIncrementalSync: {
+ *   handle: string,
+ *   lastSyncTimestamp: number  // Unix seconds — max creationTimeSeconds of synced CF ACs
+ * }
+ *
  * syncStatus: {
  *   lastAttempt: number,
  *   errors: string[]
@@ -154,6 +159,32 @@ async function bulkMergeSubmissions(platform, submissionsByDate) {
 }
 
 // ---------------------------------------------------------------------------
+// Codeforces incremental sync cursor
+// ---------------------------------------------------------------------------
+
+/**
+ * @returns {Promise<{ handle: string, lastSyncTimestamp: number }>}
+ */
+async function getCfIncrementalSync() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.CF_INCREMENTAL_SYNC);
+  const raw = result[STORAGE_KEYS.CF_INCREMENTAL_SYNC];
+  return {
+    handle: typeof raw?.handle === "string" ? raw.handle : "",
+    lastSyncTimestamp: Number(raw?.lastSyncTimestamp) || 0,
+  };
+}
+
+/**
+ * @param {Partial<{ handle: string, lastSyncTimestamp: number }>} partial
+ */
+async function setCfIncrementalSync(partial) {
+  const current = await getCfIncrementalSync();
+  await browser.storage.local.set({
+    [STORAGE_KEYS.CF_INCREMENTAL_SYNC]: { ...current, ...partial },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Last sync timestamps
 // ---------------------------------------------------------------------------
 
@@ -247,6 +278,7 @@ async function initDefaults() {
         requireBothSitesForStreak: DEFAULTS.requireBothSitesForStreak,
       },
       [STORAGE_KEYS.SUBMISSIONS]: {},
+      [STORAGE_KEYS.CF_INCREMENTAL_SYNC]: { handle: "", lastSyncTimestamp: 0 },
       [STORAGE_KEYS.LAST_SYNC]: {},
       [STORAGE_KEYS.SYNC_STATUS]: { lastAttempt: 0, errors: [] },
       [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
