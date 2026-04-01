@@ -14,8 +14,13 @@ let tooltipEl = null;
 
 function showTooltip(e, dateKey, lc, cf) {
   if (!tooltipEl) return;
-  tooltipEl.innerHTML =
-    `<strong>${dateKey}</strong><br>LeetCode: ${lc}<br>Codeforces: ${cf}`;
+  tooltipEl.replaceChildren();
+  const title = document.createElement("strong");
+  title.textContent = dateKey;
+  tooltipEl.append(title, document.createElement("br"));
+  tooltipEl.appendChild(document.createTextNode(`LeetCode: ${lc}`));
+  tooltipEl.append(document.createElement("br"));
+  tooltipEl.appendChild(document.createTextNode(`Codeforces: ${cf}`));
   tooltipEl.removeAttribute("hidden");
   moveTooltip(e);
 }
@@ -94,7 +99,7 @@ function getIntensity(total) {
 function renderDayLabels() {
   const container = document.getElementById("day-labels");
   if (!container) return;
-  container.innerHTML = "";
+  container.replaceChildren();
   DAY_LABELS.forEach((label) => {
     const span = document.createElement("span");
     span.textContent = label;
@@ -109,7 +114,7 @@ function renderDayLabels() {
 function renderMonthLabels(heatmapRange) {
   const container = document.getElementById("heatmap-months");
   if (!container) return;
-  container.innerHTML = "";
+  container.replaceChildren();
 
   const { dates, startKey } = heatmapRange;
   const totalWeeks = getWeekIndex(dates[dates.length - 1], startKey) + 1;
@@ -143,7 +148,7 @@ function renderMonthLabels(heatmapRange) {
 function renderHeatmap(dailyData, heatmapRange) {
   const grid = document.getElementById("heatmap-grid");
   if (!grid) return;
-  grid.innerHTML = "";
+  grid.replaceChildren();
 
   const { dates, startKey } = heatmapRange;
   const totalWeeks = getWeekIndex(dates[dates.length - 1], startKey) + 1;
@@ -341,13 +346,15 @@ function aggregateWeeklyCounts(dailyData, heatmapRange) {
   return { lc, cf, weekCount };
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 function renderWeeklyLineChart(dailyData, heatmapRange) {
   const container = document.getElementById("weekly-chart");
   if (!container) return;
 
   const { lc, cf, weekCount } = aggregateWeeklyCounts(dailyData, heatmapRange);
   if (weekCount < 1) {
-    container.innerHTML = "";
+    container.replaceChildren();
     return;
   }
 
@@ -390,25 +397,56 @@ function renderWeeklyLineChart(dailyData, heatmapRange) {
   pathLcArea += " Z";
 
   const ticks = [...new Set([0, Math.ceil(maxY / 2), maxY])].sort((a, b) => a - b);
-  const tickEls = ticks
-    .map((t) => {
-      const yy = yAt(t);
-      return `<line class="chart-grid" x1="${padL}" y1="${yy.toFixed(1)}" x2="${padL + innerW}" y2="${yy.toFixed(1)}"/>
-        <text class="chart-axis" x="${padL - 6}" y="${yy + 4}" text-anchor="end">${t}</text>`;
-    })
-    .join("");
-
   const ariaLabel = `Problems per week over ${weekCount} weeks. LeetCode and Codeforces.`;
-  container.innerHTML = `
-    <svg class="weekly-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${ariaLabel}">
-      ${tickEls}
-      <path class="chart-area chart-area-cf" d="${pathCfArea}" />
-      <path class="chart-area chart-area-lc" d="${pathLcArea}" />
-      <path class="chart-line chart-line-cf" fill="none" d="${dLine(cf)}" />
-      <path class="chart-line chart-line-lc" fill="none" d="${dLine(lc)}" />
-      <text class="chart-axis chart-axis-x" x="${padL + innerW / 2}" y="${H - 8}" text-anchor="middle">Weeks (older → newer)</text>
-    </svg>
-  `;
+
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "weekly-chart-svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", ariaLabel);
+
+  for (const t of ticks) {
+    const yy = yAt(t);
+    const gridLine = document.createElementNS(SVG_NS, "line");
+    gridLine.setAttribute("class", "chart-grid");
+    gridLine.setAttribute("x1", String(padL));
+    gridLine.setAttribute("y1", yy.toFixed(1));
+    gridLine.setAttribute("x2", String(padL + innerW));
+    gridLine.setAttribute("y2", yy.toFixed(1));
+    svg.appendChild(gridLine);
+
+    const tickLabel = document.createElementNS(SVG_NS, "text");
+    tickLabel.setAttribute("class", "chart-axis");
+    tickLabel.setAttribute("x", String(padL - 6));
+    tickLabel.setAttribute("y", String(yy + 4));
+    tickLabel.setAttribute("text-anchor", "end");
+    tickLabel.textContent = String(t);
+    svg.appendChild(tickLabel);
+  }
+
+  function appendPath(className, d, fillNone = false) {
+    const p = document.createElementNS(SVG_NS, "path");
+    p.setAttribute("class", className);
+    p.setAttribute("d", d);
+    if (fillNone) p.setAttribute("fill", "none");
+    svg.appendChild(p);
+  }
+
+  appendPath("chart-area chart-area-cf", pathCfArea);
+  appendPath("chart-area chart-area-lc", pathLcArea);
+  appendPath("chart-line chart-line-cf", dLine(cf), true);
+  appendPath("chart-line chart-line-lc", dLine(lc), true);
+
+  const axisX = document.createElementNS(SVG_NS, "text");
+  axisX.setAttribute("class", "chart-axis chart-axis-x");
+  axisX.setAttribute("x", String(padL + innerW / 2));
+  axisX.setAttribute("y", String(H - 8));
+  axisX.setAttribute("text-anchor", "middle");
+  axisX.textContent = "Weeks (older → newer)";
+  svg.appendChild(axisX);
+
+  container.replaceChildren(svg);
 }
 
 // ---------------------------------------------------------------------------
