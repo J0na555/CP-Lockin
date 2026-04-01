@@ -84,18 +84,24 @@ function renderMonthLabels(heatmapRange) {
   const totalWeeks = getWeekIndex(dates[dates.length - 1], startKey) + 1;
   container.style.gridTemplateColumns = `repeat(${totalWeeks}, var(--cell-size))`;
 
-  let lastMonth = -1;
+
+  let lastLabelCol = -2;
   for (const dateKey of dates) {
-    const month = parseDateKey(dateKey).getMonth();
-    if (month !== lastMonth) {
-      const weekIdx = getWeekIndex(dateKey, startKey);
-      const span = document.createElement("span");
-      span.className = "month-label";
-      span.style.gridColumn = String(weekIdx + 1);
-      span.textContent = MONTH_NAMES[month];
-      container.appendChild(span);
-      lastMonth = month;
-    }
+    const date = parseDateKey(dateKey);
+    if (date.getDate() !== 1) continue;
+
+    const weekIdx = getWeekIndex(dateKey, startKey);
+
+    // Guard against two labels landing in adjacent columns (can happen when
+    // the 1st falls on Sunday and the next month's 1st is only ~4 weeks away).
+    if (weekIdx <= lastLabelCol + 1) continue;
+
+    const span = document.createElement("span");
+    span.className = "month-label";
+    span.style.gridColumn = String(weekIdx + 1);
+    span.textContent = MONTH_NAMES[date.getMonth()];
+    container.appendChild(span);
+    lastLabelCol = weekIdx;
   }
 }
 

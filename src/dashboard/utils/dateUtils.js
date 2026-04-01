@@ -20,6 +20,16 @@ function parseDateKey(key) {
   return new Date(y, m - 1, d);
 }
 
+
+function getStartOfWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const dow = d.getDay(); // 0 = Sun, 1 = Mon, …, 6 = Sat
+  const diff = dow === 0 ? -6 : 1 - dow; // steps back to Monday
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
 /**
  * Returns the day-of-week index for grid row placement.
  * Monday = 0, Tuesday = 1, …, Sunday = 6
@@ -31,21 +41,17 @@ function getDayOfWeek(dateKey) {
   return (d.getDay() + 6) % 7;
 }
 
-/**
- * Returns the 0-based week index of a date relative to the heatmap start date.
- * @param {string} dateKey  "YYYY-MM-DD"
- * @param {string} startKey "YYYY-MM-DD"
- * @returns {number}
- */
+
 function getWeekIndex(dateKey, startKey) {
-  const date = parseDateKey(dateKey);
-  const start = parseDateKey(startKey);
-  const diffDays = Math.floor((date - start) / 86400000);
+  const [dy, dm, dd] = dateKey.split("-").map(Number);
+  const [sy, sm, sd] = startKey.split("-").map(Number);
+  // Build UTC midnight dates so subtraction is always a whole number of days.
+  const diffDays =
+    (Date.UTC(dy, dm - 1, dd) - Date.UTC(sy, sm - 1, sd)) / 86400000;
   return Math.floor(diffDays / 7);
 }
 
 /**
- *
  * @param {number} [weeks=52]
  * @returns {{ startKey: string, endKey: string, dates: string[] }}
  */
@@ -53,18 +59,16 @@ function getHeatmapRange(weeks = 52) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Monday of the current week
-  const currentDow = (today.getDay() + 6) % 7;
-  const currentMonday = new Date(today);
-  currentMonday.setDate(today.getDate() - currentDow);
-
-  // Monday `weeks` full weeks before the current week's Monday
-  const startDate = new Date(currentMonday);
-  startDate.setDate(currentMonday.getDate() - weeks * 7);
+  // Go back exactly `weeks × 7` days from today, then snap to the Monday of
+  // that week.  This guarantees that column 0 is always Mon–Sun and that
+  // getDayOfWeek row indices are always consistent with column positions —
+  // regardless of what day of the week today happens to be.
+  const rawStart = new Date(today);
+  rawStart.setDate(today.getDate() - weeks * 7);
+  const startDate = getStartOfWeek(rawStart);
 
   const dates = [];
   const cursor = new Date(startDate);
-  
   while (cursor <= today) {
     dates.push(formatDateKey(cursor));
     cursor.setDate(cursor.getDate() + 1);

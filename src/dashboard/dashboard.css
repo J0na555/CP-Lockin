@@ -282,9 +282,9 @@ body {
 /* ---- Month labels ---- */
 #heatmap-months {
   display: grid;
-  grid-template-rows: 16px;
-  align-items: end;
   height: 16px;
+  gap: var(--cell-gap);
+  align-items: end;
 }
 
 .month-label {
@@ -298,7 +298,9 @@ body {
 /* ---- Heatmap grid ---- */
 #heatmap-grid {
   display: grid;
+  grid-auto-flow: column;
   grid-template-rows: repeat(7, var(--cell-size));
+  grid-auto-columns: var(--cell-size);
   gap: var(--cell-gap);
 }
 
