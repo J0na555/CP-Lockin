@@ -4,9 +4,15 @@
  * Normalized submission shape:
  * {
  *   platform: "codeforces",
- *   problemId: string,     // e.g. "1234A"
+ *   submissionId: string,
+ *   problemId: string | null,
  *   problemName: string,
  *   timestamp: number,     // Unix seconds
+ *   handle: string,
+ *   problemLink: string,
+ *   verdict: string,
+ *   language: string,
+ *   source: "regular" | "gym"
  * }
  */
 
@@ -15,21 +21,6 @@ const CF_API_BASE = "https://codeforces.com/api";
 const CF_FULL_SYNC_COUNT = 10000;
 /** Page size when syncing incrementally (newest-first; stop at lastSyncTimestamp). */
 const CF_INCREMENTAL_CHUNK = 500;
-
-/**
- * @param {object} s  Raw Codeforces submission object
- * @param {string} handle  Codeforces handle this row was fetched for
- * @returns {{ platform: string, problemId: string, problemName: string, timestamp: number, handle: string }}
- */
-function normalizeSubmission(s, handle) {
-  return {
-    platform: PLATFORMS.CODEFORCES,
-    problemId: `${s.problem.contestId ?? ""}${s.problem.index}`,
-    problemName: s.problem.name,
-    timestamp: s.creationTimeSeconds,
-    handle,
-  };
-}
 
 /**
  * @param {string} handle
@@ -78,7 +69,10 @@ async function getCodeforcesSubmissions(handle, lastSyncTimestamp = 0) {
         if (s.verdict !== "OK") continue;
         const t = s.creationTimeSeconds;
         if (t > maxOkCreationSec) maxOkCreationSec = t;
-        submissions.push(normalizeSubmission(s, handle));
+        const normalized = normalizeCodeforcesApiSubmission(s, handle);
+        if (normalized) {
+          submissions.push(normalized);
+        }
       }
       return { submissions, error: null, maxOkCreationSec };
     }
@@ -101,7 +95,10 @@ async function getCodeforcesSubmissions(handle, lastSyncTimestamp = 0) {
         }
         if (s.verdict === "OK") {
           if (t > maxOkCreationSec) maxOkCreationSec = t;
-          submissions.push(normalizeSubmission(s, handle));
+          const normalized = normalizeCodeforcesApiSubmission(s, handle);
+          if (normalized) {
+            submissions.push(normalized);
+          }
         }
       }
 

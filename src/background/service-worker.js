@@ -2,8 +2,9 @@
  * Background service worker — orchestrates syncing and responds to popup messages.
  *
  * Message API (browser.runtime.sendMessage):
- *   { type: "sync" }    → triggers a full sync, returns { ok: true, errors: [] }
- *   { type: "getStats" } → returns { stats, streak, lastSync, settings }
+ *   { type: "sync" }             → triggers a full sync, returns { ok: true, errors: [] }
+ *   { type: "getStats" }         → returns { stats, streak, lastSync, settings }
+ *   { type: "cfDomSubmissions" } → stages scraped Codeforces rows for the next sync merge
  */
 
 // ---------------------------------------------------------------------------
@@ -46,7 +47,8 @@ browser.alarms.onAlarm.addListener((alarm) => {
  * Fetches new submissions from all configured platforms and stores them.
  *
  * LeetCode uses the submissionCalendar path (full year, count-only).
- * Codeforces uses the legacy individual-submission path.
+ * Codeforces combines API submissions with DOM-scraped submissions staged by
+ * the content script before grouping and storage.
  *
  * @returns {Promise<{ ok: boolean, errors: string[] }>}
  */
@@ -84,16 +86,23 @@ async function runSync() {
       if (cfState.handle !== settings.codeforcesHandle) {
         cfLastSyncTimestamp = 0;
       }
+      const cfDomSubmissions = await getCodeforcesDomSubmissionsForHandle(
+        settings.codeforcesHandle
+      );
 
       const { submissionsByDate, error, cfMaxOkCreationSec } = await fetchSubmissions(
         PLATFORMS.CODEFORCES,
         settings.codeforcesHandle,
-        { cfLastSyncSec: cfLastSyncTimestamp }
+        {
+          cfLastSyncSec: cfLastSyncTimestamp,
+          cfDomSubmissions,
+        }
       );
       if (error) {
         errors.push(`${PLATFORMS.CODEFORCES}: ${error}`);
       } else {
         await bulkMergeSubmissions(PLATFORMS.CODEFORCES, submissionsByDate);
+        await clearCodeforcesDomSubmissionsForHandle(settings.codeforcesHandle);
         await setLastSync(PLATFORMS.CODEFORCES, Date.now());
         await setCfIncrementalSync({
           handle: settings.codeforcesHandle,
@@ -145,9 +154,63 @@ function isTrustedInternalSender(sender) {
     return sender.id === browser.runtime.id;
   }
 
+  if (isCodeforcesSubmissionsPageSender(sender)) {
+    return true;
+  }
+
   // Fallback for contexts where id may be omitted but URL is available.
   const extensionOrigin = browser.runtime.getURL("");
   return typeof sender?.url === "string" && sender.url.startsWith(extensionOrigin);
+}
+
+/**
+ * @param {browser.runtime.MessageSender} sender
+ * @returns {boolean}
+ */
+function isCodeforcesSubmissionsPageSender(sender) {
+  const url = typeof sender?.url === "string" ? sender.url : sender?.tab?.url;
+  return typeof url === "string" && /^https:\/\/codeforces\.com\/submissions\/[^/?#]+/.test(url);
+}
+
+/**
+ * @param {unknown} payload
+ * @returns {{ handle: string, submissions: Array<object> }}
+ */
+function extractCfDomPayload(payload) {
+  const rawHandle =
+    payload && typeof payload === "object" && typeof payload.handle === "string"
+      ? payload.handle
+      : "";
+  const rawSubmissions =
+    payload && typeof payload === "object" && Array.isArray(payload.submissions)
+      ? payload.submissions
+      : [];
+
+  const submissions = rawSubmissions
+    .map((submission) => normalizeCodeforcesDomSubmission(submission))
+    .filter(Boolean);
+
+  return {
+    handle: rawHandle.trim(),
+    submissions,
+  };
+}
+
+/**
+ * @param {unknown} payload
+ * @returns {Promise<{ ok: boolean, accepted: number, handle?: string, error?: string }>}
+ */
+async function handleCfDomSubmissionsMessage(payload) {
+  const { handle, submissions } = extractCfDomPayload(payload);
+  if (!handle) {
+    return { ok: false, accepted: 0, error: "Missing Codeforces handle." };
+  }
+  if (submissions.length === 0) {
+    return { ok: true, accepted: 0, handle };
+  }
+
+  const staged = await stageCodeforcesDomSubmissions(handle, submissions);
+  return { ok: true, accepted: submissions.length, handle, buffered: staged.length };
 }
 
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -172,6 +235,18 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     buildStatsResponse()
       .then((payload) => sendResponse(payload))
       .catch((err) => sendResponse({ error: err.message }));
+    return true;
+  }
+
+  if (message.type === "cfDomSubmissions") {
+    if (!isCodeforcesSubmissionsPageSender(sender)) {
+      sendResponse({ ok: false, error: "Unsupported Codeforces sender URL." });
+      return false;
+    }
+
+    handleCfDomSubmissionsMessage(message.payload)
+      .then((payload) => sendResponse(payload))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
     return true;
   }
 

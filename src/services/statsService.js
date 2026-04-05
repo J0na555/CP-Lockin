@@ -21,7 +21,7 @@ function getDailyCounts(dateKey, submissionsByDate) {
 }
 
 /**
- * Sum all problems solved in the current calendar week (Mon–Sun).
+ * Sum all accepted submissions in the current calendar week (Mon–Sun).
  * @param {Object.<string, Object.<string, Array>>} submissionsByDate
  * @returns {{ codeforces: number, leetcode: number, total: number }}
  */
@@ -47,6 +47,8 @@ function getWeeklySolvedCount(submissionsByDate) {
  * @param {Object.<string, Object.<string, Array>>} submissionsByDate
  * @param {number} weeklyGoal
  * @returns {{ solved: number, goal: number, percentage: number, byPlatform: { codeforces: number, leetcode: number } }}
+ * `solved` is kept as the public field name for compatibility, but it now
+ * represents accepted-submission totals.
  */
 function getWeeklyProgress(submissionsByDate, weeklyGoal) {
   const weeklyCounts = getWeeklySolvedCount(submissionsByDate);

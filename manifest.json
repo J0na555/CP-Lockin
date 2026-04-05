@@ -18,6 +18,13 @@
     "https://leetcode.com/*"
   ],
 
+  "content_scripts": [
+    {
+      "matches": ["https://codeforces.com/submissions/*"],
+      "js": ["src/content/codeforcesSubmissionsScraper.js"]
+    }
+  ],
+
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_icon": {
@@ -33,6 +40,7 @@
     "scripts": [
       "src/config/defaults.js",
       "src/utils/dateUtils.js",
+      "src/api/codeforcesMerge.js",
       "src/storage/storageService.js",
       "src/api/codeforcesApi.js",
       "src/api/leetcodeApi.js",

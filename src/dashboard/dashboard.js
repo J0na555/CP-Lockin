@@ -193,7 +193,7 @@ function renderSummaryStats(dailyData, heatmapRange) {
   const { dates } = heatmapRange;
   let activeDays = 0;
   let bothDays   = 0;
-  let totalSolved = 0;
+  let totalAccepted = 0;
 
   for (const dateKey of dates) {
     const d = dailyData[dateKey];
@@ -201,14 +201,14 @@ function renderSummaryStats(dailyData, heatmapRange) {
     const lc = d.leetcode   ?? 0;
     const cf = d.codeforces ?? 0;
     const total = lc + cf;
-    totalSolved += total;
+    totalAccepted += total;
     if (total > 0) activeDays++;
     if (lc > 0 && cf > 0) bothDays++;
   }
 
   document.getElementById("stat-active-days").textContent = activeDays;
   document.getElementById("stat-both-days").textContent = bothDays;
-  document.getElementById("stat-total-solved").textContent = totalSolved;
+  document.getElementById("stat-total-solved").textContent = totalAccepted;
 }
 
 function getCurrentWeekFromDailyData(dailyData) {
@@ -409,7 +409,7 @@ function renderWeeklyLineChart(dailyData, heatmapRange) {
   pathLcArea += " Z";
 
   const ticks = [...new Set([0, Math.ceil(maxY / 2), maxY])].sort((a, b) => a - b);
-  const ariaLabel = `Problems per week over ${weekCount} weeks. LeetCode and Codeforces.`;
+  const ariaLabel = `Accepted submissions per week over ${weekCount} weeks. LeetCode and Codeforces.`;
 
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("class", "weekly-chart-svg");

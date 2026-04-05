@@ -59,7 +59,7 @@ function getCurrentWeekDateKeys(date = new Date()) {
 }
 
 /**
- * Computes current-week solved counts from submission buckets.
+ * Computes current-week accepted-submission counts from submission buckets.
  * Only inspects current week days; does not rebuild historical weeks.
  *
  * @param {Object.<string, Object.<string, Array>>} submissionsByDate

@@ -63,6 +63,9 @@ const PLATFORMS = {
 const STORAGE_KEYS = {
   SETTINGS: "settings",
   SUBMISSIONS: "submissions",
+  // Buffered Codeforces submissions scraped from submissions pages, keyed by handle.
+  // Shape: { [handle: string]: Array<object> }
+  CF_DOM_SUBMISSIONS: "cfDomSubmissions",
   /** Codeforces incremental sync: { handle: string, lastSyncTimestamp: number } ). */
   CF_INCREMENTAL_SYNC: "cfIncrementalSync",
   LAST_SYNC: "lastSync",

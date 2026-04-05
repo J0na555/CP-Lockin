@@ -10,7 +10,7 @@
  * getLeetCodeDateCountsForSettings, getLeetCodeCalendarMeta, isLeetCodeUserNotFound (storageService)
  *
  * @returns {Promise<{ daily: Object.<string, { leetcode: number, codeforces: number }>, leetCodeUserNotFound: boolean }>}
- *   Keys are "YYYY-MM-DD" date strings; values are solve counts.
+ *   Keys are "YYYY-MM-DD" date strings; values are accepted-submission counts.
  */
 async function getDailyActivity() {
   const settings = await getSettings();

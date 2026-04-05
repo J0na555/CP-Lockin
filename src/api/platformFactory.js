@@ -14,7 +14,7 @@
  *
  * @param {string} platform  One of PLATFORMS.*
  * @param {string} handle
- * @param {{ cfLastSyncSec?: number }} [options]
+ * @param {{ cfLastSyncSec?: number, cfDomSubmissions?: Array<object> }} [options]
  * @returns {Promise<{submissionsByDate: Object.<string, Array>, error: string|null, cfMaxOkCreationSec: number}>}
  */
 async function fetchSubmissions(platform, handle, options = {}) {
@@ -38,7 +38,15 @@ async function fetchSubmissions(platform, handle, options = {}) {
     return { submissionsByDate: {}, error: result.error, cfMaxOkCreationSec: 0 };
   }
 
-  const submissionsByDate = groupByDate(result.submissions);
+  const mergedSubmissions =
+    platform === PLATFORMS.CODEFORCES
+      ? mergeCodeforcesSubmissionCollections(
+          result.submissions,
+          options.cfDomSubmissions ?? []
+        )
+      : result.submissions;
+
+  const submissionsByDate = groupByDate(mergedSubmissions);
   return {
     submissionsByDate,
     error: null,

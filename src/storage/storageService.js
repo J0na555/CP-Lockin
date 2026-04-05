@@ -12,9 +12,24 @@
  * submissions: {
  *   [dateKey: "YYYY-MM-DD"]: {
  *     [platform: string]: [
- *       { platform: string, problemId: string, problemName: string, timestamp: number }
+ *       {
+ *         platform: string,
+ *         submissionId?: string,
+ *         problemId: string | null,
+ *         problemName: string,
+ *         timestamp: number,
+ *         handle?: string,
+ *         problemLink?: string,
+ *         verdict?: string,
+ *         language?: string,
+ *         source?: "regular" | "gym"
+ *       }
  *     ]
  *   }
+ * }
+ *
+ * cfDomSubmissions: {
+ *   [handle: string]: Array<object>  // staged scraped CF rows awaiting sync merge
  * }
  *
  * lastSync: {
@@ -127,25 +142,36 @@ async function getSubmissionsByDate(dateKey) {
 
 /**
  * Merges new submissions into storage for a given date and platform.
- * Deduplication key is platform+problemId.
+ * Codeforces deduplicates by submissionId with a legacy fallback key.
+ * Other platforms keep their existing platform+problemId behavior.
  * @param {string} dateKey
- * @param {Array<{platform:string, problemId:string, problemName:string, timestamp:number}>} newSubmissions
+ * @param {Array<{platform:string, submissionId?:string, problemId:string|null, problemName:string, timestamp:number}>} newSubmissions
  */
+function areSubmissionArraysEqual(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 async function mergeSubmissions(dateKey, platform, newSubmissions) {
   if (!newSubmissions || newSubmissions.length === 0) return;
 
   const all = await getAllSubmissions();
   const bucket = all[dateKey] ?? normalizeDateBucket();
   const existing = bucket[platform] ?? [];
+  let merged;
 
-  const seen = new Set(existing.map((s) => `${s.platform}:${s.problemId}`));
-  const toAdd = newSubmissions.filter(
-    (s) => !seen.has(`${s.platform}:${s.problemId}`)
-  );
+  if (platform === PLATFORMS.CODEFORCES) {
+    merged = mergeCodeforcesSubmissionCollections(existing, newSubmissions);
+    if (areSubmissionArraysEqual(existing, merged)) return;
+  } else {
+    const seen = new Set(existing.map((s) => `${s.platform}:${s.problemId}`));
+    const toAdd = newSubmissions.filter(
+      (s) => !seen.has(`${s.platform}:${s.problemId}`)
+    );
+    if (toAdd.length === 0) return;
+    merged = [...existing, ...toAdd];
+  }
 
-  if (toAdd.length === 0) return;
-
-  bucket[platform] = [...existing, ...toAdd];
+  bucket[platform] = merged;
   all[dateKey] = bucket;
   await browser.storage.local.set({ [STORAGE_KEYS.SUBMISSIONS]: all });
 }
@@ -160,6 +186,72 @@ async function bulkMergeSubmissions(platform, submissionsByDate) {
   for (const [dateKey, subs] of Object.entries(submissionsByDate)) {
     await mergeSubmissions(dateKey, platform, subs);
   }
+}
+
+/**
+ * Buffered DOM-scraped Codeforces submissions, keyed by handle.
+ * @returns {Promise<Object.<string, Array<object>>>}
+ */
+async function getCodeforcesDomSubmissions() {
+  const result = await browser.storage.local.get(STORAGE_KEYS.CF_DOM_SUBMISSIONS);
+  const raw = result[STORAGE_KEYS.CF_DOM_SUBMISSIONS];
+  return raw && typeof raw === "object" ? raw : {};
+}
+
+/**
+ * @param {string} handle
+ * @returns {Promise<Array<object>>}
+ */
+async function getCodeforcesDomSubmissionsForHandle(handle) {
+  const normalizedHandle = (handle ?? "").trim();
+  if (!normalizedHandle) return [];
+
+  const buffered = await getCodeforcesDomSubmissions();
+  const submissions = buffered[normalizedHandle];
+  return Array.isArray(submissions) ? submissions : [];
+}
+
+/**
+ * Stores normalized DOM-scraped Codeforces rows until the next sync merge.
+ *
+ * @param {string} handle
+ * @param {Array<object>} submissions
+ * @returns {Promise<Array<object>>}
+ */
+async function stageCodeforcesDomSubmissions(handle, submissions) {
+  const normalizedHandle = (handle ?? "").trim();
+  if (!normalizedHandle) return [];
+
+  const normalizedSubmissions = (Array.isArray(submissions) ? submissions : [])
+    .map((submission) => normalizeCodeforcesDomSubmission(submission))
+    .filter(Boolean);
+  if (normalizedSubmissions.length === 0) {
+    return getCodeforcesDomSubmissionsForHandle(normalizedHandle);
+  }
+
+  const buffered = await getCodeforcesDomSubmissions();
+  const existing = Array.isArray(buffered[normalizedHandle]) ? buffered[normalizedHandle] : [];
+  buffered[normalizedHandle] = mergeCodeforcesSubmissionCollections(
+    existing,
+    normalizedSubmissions
+  );
+
+  await browser.storage.local.set({ [STORAGE_KEYS.CF_DOM_SUBMISSIONS]: buffered });
+  return buffered[normalizedHandle];
+}
+
+/**
+ * @param {string} handle
+ */
+async function clearCodeforcesDomSubmissionsForHandle(handle) {
+  const normalizedHandle = (handle ?? "").trim();
+  if (!normalizedHandle) return;
+
+  const buffered = await getCodeforcesDomSubmissions();
+  if (!(normalizedHandle in buffered)) return;
+
+  delete buffered[normalizedHandle];
+  await browser.storage.local.set({ [STORAGE_KEYS.CF_DOM_SUBMISSIONS]: buffered });
 }
 
 // ---------------------------------------------------------------------------
@@ -466,6 +558,7 @@ async function tagSubmissionsWithHandles(handles) {
 async function clearAllTrackingData(nextHandles) {
   await browser.storage.local.set({
     [STORAGE_KEYS.SUBMISSIONS]: {},
+    [STORAGE_KEYS.CF_DOM_SUBMISSIONS]: {},
     [STORAGE_KEYS.LEETCODE_CALENDAR]: {},
     [STORAGE_KEYS.LEETCODE_CALENDAR_META]: {
       handle: (nextHandles.leetcodeHandle ?? "").trim(),
@@ -499,6 +592,7 @@ async function initDefaults() {
         requireBothSitesForStreak: DEFAULTS.requireBothSitesForStreak,
       },
       [STORAGE_KEYS.SUBMISSIONS]: {},
+      [STORAGE_KEYS.CF_DOM_SUBMISSIONS]: {},
       [STORAGE_KEYS.CF_INCREMENTAL_SYNC]: { handle: "", lastSyncTimestamp: 0 },
       [STORAGE_KEYS.LAST_SYNC]: {},
       [STORAGE_KEYS.SYNC_STATUS]: { lastAttempt: 0, errors: [] },

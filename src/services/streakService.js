@@ -1,16 +1,16 @@
 /**
  * streakService — streak calculation logic.
  * A streak is a consecutive sequence of days (ending today or yesterday)
- * where the user solved at least dailyMinGoal problems.
+ * where the user recorded at least dailyMinGoal accepted submissions.
  */
 
 /**
  * Calculates the current and longest streaks.
  *
  * "Current" streak:
- *   - Walk backward from today. If today has no solves, check yesterday (a
+ *   - Walk backward from today. If today has no accepted submissions, check yesterday (a
  *     streak can still be active if today's data hasn't been synced yet).
- *   - Stop at the first day with fewer than dailyMinGoal solves.
+ *   - Stop at the first day with fewer than dailyMinGoal accepted submissions.
  *
  * "Longest" streak:
  *   - Scan all stored dates in ascending order.
@@ -42,7 +42,7 @@ function calculateStreak(submissionsByDate, settings = {}) {
   let current = 0;
   let checkDate = new Date();
 
-  // If no solves today, check from yesterday (streak still valid)
+  // If there is no accepted activity today, check from yesterday instead.
   if (!qualifiesForStreak(today)) {
     checkDate.setDate(checkDate.getDate() - 1);
   }
