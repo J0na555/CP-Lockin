@@ -174,5 +174,5 @@ npm run build
 
 This project is licensed under the **MIT License**.
 
-See `LICENSE` for details.
+See [`LICENSE`](LICENSE) for details.
 
