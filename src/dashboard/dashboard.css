@@ -96,6 +96,12 @@ body {
   color: #ff9caf;
 }
 
+.status-banner--info {
+  background: rgba(74, 144, 226, 0.12);
+  border: 1px solid rgba(107, 168, 240, 0.3);
+  color: #c6ddff;
+}
+
 /* ---- Summary cards ---- */
 .summary-section {
   display: grid;
