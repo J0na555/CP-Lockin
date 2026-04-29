@@ -1,7 +1,3 @@
-/**
- * Options page script — loads and saves extension settings.
- */
-
 const form = document.getElementById("settings-form");
 const elCfHandle = document.getElementById("cf-handle");
 const elLcHandle = document.getElementById("lc-handle");

@@ -1,12 +1,3 @@
-/**
- * Popup script — handles UI rendering and user interactions.
- * Communicates with the background service worker via browser.runtime.sendMessage.
- */
-
-// ---------------------------------------------------------------------------
-// DOM references
-// ---------------------------------------------------------------------------
-
 const elTodayCount = document.getElementById("today-count");
 const elTodayBreakdown = document.getElementById("today-breakdown");
 const elStreakCount = document.getElementById("streak-count");
@@ -35,11 +26,9 @@ function renderStats(payload) {
     elNoticeLcNotFound.classList.toggle("hidden", !leetCodeUserNotFound);
   }
 
-  // Today
   elTodayCount.textContent = stats.todayCount;
   elTodayBreakdown.textContent = `CF ${stats.todayByPlatform.codeforces} | LC ${stats.todayByPlatform.leetcode}`;
 
-  // Daily goal badge
   elDailyBadge.classList.remove("hidden", "badge--success", "badge--pending");
   if (stats.dailyGoalMet) {
     elDailyBadge.textContent = "goal met ✓";
@@ -49,10 +38,8 @@ function renderStats(payload) {
     elDailyBadge.classList.add("badge--pending");
   }
 
-  // Streak
   elStreakCount.textContent = streak.current;
 
-  // Weekly progress
   const { solved, goal, percentage } = stats.weeklyProgress;
   elWeeklySolved.textContent = solved;
   elWeeklyGoal.textContent = goal;
@@ -65,7 +52,6 @@ function renderStats(payload) {
     elWeeklyBar.classList.remove("complete");
   }
 
-  // Last sync — show the most recent across platforms
   const times = Object.values(lastSync).filter(Boolean);
   if (times.length > 0) {
     const latest = Math.max(...times);
@@ -74,7 +60,6 @@ function renderStats(payload) {
     elSyncStatus.textContent = "Never synced";
   }
 
-  // No-handle notice
   const hasHandle = settings.codeforcesHandle || settings.leetcodeHandle;
   elNoticeNoHandle.classList.toggle("hidden", Boolean(hasHandle));
   renderSyncError(syncStatus);

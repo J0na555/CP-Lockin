@@ -83,6 +83,15 @@ The popup surfaces quick feedback for today, this week, and your current streak,
 
 > No build step is required for local loading. Firefox can load the extension directly from the source tree.
 
+### Load in Chrome/Chromium (MV3)
+
+Chrome uses a Manifest V3 service worker background, so load the Chrome-specific manifest:
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the repository folder, then choose `chrome/manifest.json` when prompted (or select the `chrome/` folder if your Chrome version expects a directory manifest).
+
 ## Usage
 
 1. Open the extension popup from the browser toolbar.
@@ -175,4 +184,3 @@ npm run build
 This project is licensed under the **MIT License**.
 
 See [`LICENSE`](LICENSE) for details.
-

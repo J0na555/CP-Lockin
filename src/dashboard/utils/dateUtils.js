@@ -45,7 +45,6 @@ function getDayOfWeek(dateKey) {
 function getWeekIndex(dateKey, startKey) {
   const [dy, dm, dd] = dateKey.split("-").map(Number);
   const [sy, sm, sd] = startKey.split("-").map(Number);
-  // Build UTC midnight dates so subtraction is always a whole number of days.
   const diffDays =
     (Date.UTC(dy, dm - 1, dd) - Date.UTC(sy, sm - 1, sd)) / 86400000;
   return Math.floor(diffDays / 7);
@@ -59,10 +58,7 @@ function getHeatmapRange(weeks = 52) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Go back exactly `weeks × 7` days from today, then snap to the Monday of
-  // that week.  This guarantees that column 0 is always Mon–Sun and that
-  // getDayOfWeek row indices are always consistent with column positions —
-  // regardless of what day of the week today happens to be.
+
   const rawStart = new Date(today);
   rawStart.setDate(today.getDate() - weeks * 7);
   const startDate = getStartOfWeek(rawStart);

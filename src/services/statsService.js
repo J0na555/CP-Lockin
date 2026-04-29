@@ -1,9 +1,4 @@
 /**
- * statsService — pure business logic, no storage or API calls.
- * All functions receive data as arguments and return plain values.
- */
-
-/**
  * Returns per-platform and total counts for a date.
  * @param {string} dateKey  "YYYY-MM-DD"
  * @param {Object.<string, Object.<string, Array>>} submissionsByDate

@@ -152,7 +152,6 @@
         },
       });
     } catch (_) {
-      // Ignore transient messaging failures on pages that unload quickly.
     }
   }
 

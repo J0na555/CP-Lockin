@@ -1,8 +1,3 @@
-/**
- * Shared Codeforces normalization and merge helpers used by both the API sync
- * path and the DOM scraper path.
- */
-
 const CODEFORCES_SUBMISSION_SOURCES = {
   REGULAR: "regular",
   GYM: "gym",
@@ -190,8 +185,6 @@ function getCodeforcesSubmissionMergeKey(submission) {
     return "";
   }
 
-  // Legacy stored rows predate submissionId and may not have a handle.
-  // Keep the fallback key handle-agnostic so fresh rows merge into that history.
   return `${PLATFORMS.CODEFORCES}:${problemId}:${timestamp}`;
 }
 

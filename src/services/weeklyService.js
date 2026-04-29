@@ -1,8 +1,4 @@
 /**
- * weeklyService — ISO week helpers + persistent weekly history snapshots.
- */
-
-/**
  * Returns "YYYY-W##" using ISO-8601 week numbering (Mon-start).
  * @param {Date} [date=new Date()]
  * @returns {string}
@@ -11,7 +7,6 @@ function getISOWeekKey(date = new Date()) {
   const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   localDate.setHours(12, 0, 0, 0);
 
-  // ISO week-year is defined by the Thursday of the week.
   const isoDay = (localDate.getDay() + 6) % 7; // Mon=0..Sun=6
   localDate.setDate(localDate.getDate() + 3 - isoDay);
   const isoYear = localDate.getFullYear();

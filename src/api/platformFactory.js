@@ -1,14 +1,4 @@
 /**
- * Platform factory — single entry point for fetching submissions.
- *
- * To add a new platform (e.g., AtCoder):
- *   1. Create src/api/atcoderApi.js exporting getAtCoderSubmissions(handle).
- *   2. Load that script before service-worker.js in the background scope.
- *   3. Add a case for PLATFORMS.ATCODER below.
- */
-
-
-/**
  * Fetches accepted submissions for the given platform and handle.
  * Returns normalized submissions grouped by date key ("YYYY-MM-DD").
  *
@@ -26,8 +16,6 @@ async function fetchSubmissions(platform, handle, options = {}) {
       break;
 
     case PLATFORMS.LEETCODE:
-      // LeetCode is synced via the submissionCalendar path directly in
-      // service-worker.js (runSync). fetchSubmissions() is not used for it.
       return { submissionsByDate: {}, error: null, cfMaxOkCreationSec: 0 };
 
     default:

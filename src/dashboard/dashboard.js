@@ -1,8 +1,3 @@
-/**
- * dashboard.js — pure rendering; no data-fetching or date logic.
- * Depends on: utils/dateUtils.js, services/trackerService.js
- */
-
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAY_LABELS   = ["Mon","","Wed","","Fri","","Sun"];
 
@@ -140,8 +135,7 @@ function renderMonthLabels(heatmapRange) {
 
     const weekIdx = getWeekIndex(dateKey, startKey);
 
-    // Guard against two labels landing in adjacent columns (can happen when
-    // the 1st falls on Sunday and the next month's 1st is only ~4 weeks away).
+
     if (weekIdx <= lastLabelCol + 1) continue;
 
     const span = document.createElement("span");
@@ -270,8 +264,6 @@ async function renderWeeklyProgress(dailyData) {
     : DEFAULTS.weeklyGoal;
 
   const currentWeek = weeklyStats[currentWeekKey] ?? getCurrentWeekFromDailyData(dailyData);
-  // Fallback is critical for existing users who have last week data in submissions
-  // but no persisted weekly snapshot from older extension versions.
   const previousWeek = weeklyStats[previousWeekKey] ?? getWeekFromDailyData(dailyData, 1);
 
   const weekViews = {

@@ -1,11 +1,29 @@
-/**
- * Background service worker — orchestrates syncing and responds to popup messages.
- *
- * Message API (browser.runtime.sendMessage):
- *   { type: "sync" }             → triggers a full sync, returns { ok: true, errors: [] }
- *   { type: "getStats" }         → returns { stats, streak, lastSync, settings }
- *   { type: "cfDomSubmissions" } → stages scraped Codeforces rows for the next sync merge
- */
+if (typeof importScripts === "function") {
+  try {
+    importScripts("../utils/browserShim.js");
+  } catch (err) {
+    console.error("Failed to load browser shim", err);
+  }
+}
+
+if (typeof DEFAULTS === "undefined" && typeof importScripts === "function") {
+  try {
+    importScripts(
+      "../config/defaults.js",
+      "../utils/dateUtils.js",
+      "../api/codeforcesMerge.js",
+      "../storage/storageService.js",
+      "../api/codeforcesApi.js",
+      "../api/leetcodeApi.js",
+      "../api/platformFactory.js",
+      "../services/statsService.js",
+      "../services/streakService.js",
+      "../services/weeklyService.js"
+    );
+  } catch (err) {
+    console.error("Failed to load background dependencies", err);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Install / startup
@@ -79,7 +97,6 @@ async function runSync() {
       await setLeetCodeCalendarMeta({ handle: "", userFound: true });
     }
 
-    // --- Codeforces: individual submission path (incremental after first full sync) ----
     if (settings.codeforcesHandle) {
       const cfState = await getCfIncrementalSync();
       let cfLastSyncTimestamp = cfState.lastSyncTimestamp;
@@ -149,7 +166,6 @@ async function runSync() {
  * @returns {boolean}
  */
 function isTrustedInternalSender(sender) {
-  // Most extension-context messages provide sender.id.
   if (sender?.id) {
     return sender.id === browser.runtime.id;
   }
@@ -158,7 +174,6 @@ function isTrustedInternalSender(sender) {
     return true;
   }
 
-  // Fallback for contexts where id may be omitted but URL is available.
   const extensionOrigin = browser.runtime.getURL("");
   return typeof sender?.url === "string" && sender.url.startsWith(extensionOrigin);
 }
@@ -228,7 +243,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     runSync()
       .then((result) => sendResponse(result))
       .catch((err) => sendResponse({ ok: false, errors: [err.message] }));
-    return true; // keep channel open for async response
+    return true; 
   }
 
   if (message.type === "getStats") {
@@ -285,8 +300,7 @@ function mergeCalendarIntoSubmissions(submissionsByDate, lcCalendar) {
     if (!merged[dateKey]) {
       merged[dateKey] = { [PLATFORMS.CODEFORCES]: [], [PLATFORMS.LEETCODE]: [] };
     }
-    // Synthetic placeholder array sized to the calendar count. Only .length
-    // is ever read by the stats/streak services — contents are irrelevant.
+
     merged[dateKey] = {
       ...merged[dateKey],
       [PLATFORMS.LEETCODE]: Array.from({ length: count }),
@@ -296,9 +310,7 @@ function mergeCalendarIntoSubmissions(submissionsByDate, lcCalendar) {
   return merged;
 }
 
-/**
- * Reads storage and computes the full stats payload for the popup.
- */
+
 async function buildStatsResponse() {
   const [submissionsByDate, settings, syncStatus] = await Promise.all([
     getAllSubmissions(),

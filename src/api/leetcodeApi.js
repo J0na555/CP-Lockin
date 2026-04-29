@@ -97,18 +97,8 @@ function parseSubmissionCalendar(jsonStr) {
 }
 
 /**
- * Converts a raw submissionCalendar { [unixSeconds]: count } object into a
- * date-keyed map { [dateKey: "YYYY-MM-DD"]: count }.
  *
- * Timezone note: LeetCode stores calendar timestamps as UTC midnight
- * boundaries (e.g. 1609459200 = 2021-01-01 00:00:00 UTC). We extract the
- * date using UTC methods so the keys match LeetCode's own day groupings.
- * For users in strongly negative UTC offsets (e.g. UTC-8), a submission made
- * late in their local evening will appear under the NEXT UTC date in the
- * calendar — this is an inherent limitation of the calendar API and cannot
- * be corrected without individual submission timestamps.
- *
- * @param {Object.<string, number>} calendar  From parseSubmissionCalendar()
+ * @param {Object.<string, number>} calendar  
  * @returns {Object.<string, number>}
  */
 function calendarToDateCounts(calendar) {
@@ -120,7 +110,6 @@ function calendarToDateCounts(calendar) {
     const month = String(d.getUTCMonth() + 1).padStart(2, "0");
     const day = String(d.getUTCDate()).padStart(2, "0");
     const dateKey = `${year}-${month}-${day}`;
-    // Accumulate in case two timestamps collapse to the same UTC date.
     result[dateKey] = (result[dateKey] ?? 0) + count;
   }
   return result;
@@ -131,8 +120,8 @@ function calendarToDateCounts(calendar) {
  *
  * Safe to call with date keys outside the calendar range — they contribute 0.
  *
- * @param {Object.<string, number>} dateCounts  From calendarToDateCounts()
- * @param {string[]} dateKeys  "YYYY-MM-DD" strings (e.g. from getCalendarWeekDateKeys())
+ * @param {Object.<string, number>} dateCounts 
+ * @param {string[]} dateKeys 
  * @returns {number}
  */
 function sumSubmissionsForDates(dateCounts, dateKeys) {

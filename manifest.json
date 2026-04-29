@@ -7,7 +7,6 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "cp-lockin@jonas.dev",
-      "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": ["none"]
       }
@@ -27,7 +26,10 @@
   "content_scripts": [
     {
       "matches": ["https://codeforces.com/submissions/*"],
-      "js": ["src/content/codeforcesSubmissionsScraper.js"]
+      "js": [
+        "src/utils/browserShim.js",
+        "src/content/codeforcesSubmissionsScraper.js"
+      ]
     }
   ],
 

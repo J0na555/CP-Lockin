@@ -26,9 +26,7 @@ async function getDailyActivity() {
 
   const daily = {};
 
-  // Pass 1: seed from individual submission objects (both platforms).
-  // This preserves legacy LeetCode objects from before the calendar migration
-  // and provides the baseline Codeforces counts used permanently.
+
   for (const [dateKey, bucket] of Object.entries(rawSubmissions)) {
     if (!bucket || typeof bucket !== "object") continue;
 
@@ -46,8 +44,7 @@ async function getDailyActivity() {
     }
   }
 
-  // Pass 2: calendar counts override LeetCode for every date they cover.
-  // Once the first calendar sync has run this supersedes all legacy objects.
+
   for (const [dateKey, count] of Object.entries(lcCounts)) {
     if (count > 0) {
       if (!daily[dateKey]) daily[dateKey] = { leetcode: 0, codeforces: 0 };

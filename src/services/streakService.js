@@ -1,10 +1,4 @@
 /**
- * streakService — streak calculation logic.
- * A streak is a consecutive sequence of days (ending today or yesterday)
- * where the user recorded at least dailyMinGoal accepted submissions.
- */
-
-/**
  * Calculates the current and longest streaks.
  *
  * "Current" streak:
@@ -38,11 +32,9 @@ function calculateStreak(submissionsByDate, settings = {}) {
     return counts.codeforces > 0 && counts.leetcode > 0;
   }
 
-  // ---- current streak ----
   let current = 0;
   let checkDate = new Date();
 
-  // If there is no accepted activity today, check from yesterday instead.
   if (!qualifiesForStreak(today)) {
     checkDate.setDate(checkDate.getDate() - 1);
   }
@@ -54,7 +46,6 @@ function calculateStreak(submissionsByDate, settings = {}) {
     checkDate.setDate(checkDate.getDate() - 1);
   }
 
-  // ---- longest streak ----
   const sortedKeys = Object.keys(submissionsByDate).sort();
   let longest = 0;
   let run = 0;
